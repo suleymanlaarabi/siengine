@@ -3,6 +3,7 @@
   "type": "application",
   "value": {
     "author": "John Doe",
-    "description": "Room sharing for kids"
+    "description": "Room sharing for kids",
+    "use": ["siecs"]
   }
 }
