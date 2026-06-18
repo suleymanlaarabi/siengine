@@ -3,7 +3,7 @@
   "type": "application",
   "value": {
     "author": "Suleyman Laarabi",
-    "description": "Room sharing for kids",
+    "description": "siecs based game engine",
     "use": ["siecs"]
   },
   "bundle": {
