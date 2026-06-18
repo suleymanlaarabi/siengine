@@ -11,22 +11,36 @@
 
 ECS_MODULE_DEFINE(siengine);
 
-ECS_RESOURCE_DECLARE(SIEngineCtx, {
+ECS_RESOURCE(SIEngineCtx, {
     SDL_GPUDevice *primary_gpu;
     SDL_GPUCommandBuffer *cmd;
 });
 
-ECS_RESOURCE_DEFINE(SIEngineCtx);
+ECS_COMPONENT(SIWindowHandle, { SDL_Window *handle; })
 
-void on_window_remove(ecs_world_t *world, ecs_entity_t, ecs_component_t, void *data) {
+void on_window_remove(ecs_world_t *world, ecs_entity_t entity, ecs_component_t, void *data) {
     SIEngineCtx *ctx = ecs_resource(world, SIEngineCtx);
-    SIWindow *window = data;
+    SIWindowHandle *handle = ecs_get(world, entity, SIWindowHandle);
+    SIWindow *window_desc = data;
 
-    SDL_ReleaseWindowFromGPUDevice(ctx->primary_gpu, (SDL_Window *) window->ptr);
-    SDL_DestroyWindow((SDL_Window *) window->ptr);
+    SDL_ReleaseWindowFromGPUDevice(ctx->primary_gpu, (SDL_Window *)handle->handle);
+    SDL_DestroyWindow(handle->handle);
+    ecs_remove(world, entity, SIWindowHandle);
+    free(window_desc->title);
 }
 
-ECS_COMPONENT_DEFINE(SIWindow, .on_remove = on_window_remove);
+void on_window_add(ecs_world_t *world, ecs_entity_t entity, ecs_component_t, void *data) {
+    SIEngineCtx *ctx = ecs_resource(world, SIEngineCtx);
+    const SIWindow *window_desc = data;
+
+    SDL_Window *window = SDL_CreateWindow(window_desc->title, 1920, 1080, SDL_WINDOW_RESIZABLE);
+
+    SDL_ClaimWindowForGPUDevice(ctx->primary_gpu, window);
+
+    ecs_set(world, entity, SIWindowHandle, { .handle = window });
+}
+
+ECS_COMPONENT_DEFINE(SIWindow, .on_remove = on_window_remove, .on_add = on_window_add);
 
 void begin_drawing(ecs_iter_t *it) {
     SIEngineCtx *ctx = ecs_resource(it->world, SIEngineCtx);
@@ -39,13 +53,13 @@ void begin_drawing(ecs_iter_t *it) {
 
         if (e.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
             SDL_WindowID closed_id = e.window.windowID;
-            ecs_query_id_t q = ecs_query(it->world, { .terms = { ecs_inout(SIWindow) } });
+            ecs_query_id_t q = ecs_query(it->world, { .terms = { ecs_inout(SIWindowHandle) } });
             ecs_iter_t q_it = ecs_query_iter(it->world, q);
 
             while (ecs_iter_next(&q_it)) {
-                SIWindow *windows = ecs_field(&q_it, 0);
+                SIWindowHandle *windows = ecs_field(&q_it, 0);
                 for (uint32_t i = 0; i < q_it.count; i++) {
-                    if (SDL_GetWindowID((SDL_Window *)windows[i].ptr) == closed_id) {
+                    if (SDL_GetWindowID(windows[i].handle) == closed_id) {
                         ecs_kill(it->world, q_it.entities[i]);
                         break;
                     }
@@ -61,14 +75,14 @@ void begin_drawing(ecs_iter_t *it) {
 
 void drawing(ecs_iter_t *it) {
     SIEngineCtx *ctx = ecs_resource(it->world, SIEngineCtx);
-    SIWindow *windows = ecs_field(it, 0);
+    SIWindowHandle *windows = ecs_field(it, 0);
     SDL_GPUTexture *swapchain_texture = NULL;
     uint32_t width, height;
 
     for (uint32_t i = 0; i < it->count; i++) {
         SDL_WaitAndAcquireGPUSwapchainTexture(
             ctx->cmd,
-            (SDL_Window *)windows[i].ptr,
+            windows[i].handle,
             &swapchain_texture,
             &width,
             &height
@@ -92,16 +106,6 @@ void end_drawing(ecs_iter_t *it) {
     SDL_SubmitGPUCommandBuffer(ctx->cmd);
 }
 
-SIWindow siengine_create_window(ecs_world_t *world, const char *title) {
-    SIEngineCtx *ctx = ecs_resource(world, SIEngineCtx);
-
-    SDL_Window *window = SDL_CreateWindow(title, 1920, 1080, SDL_WINDOW_RESIZABLE);
-
-    SDL_ClaimWindowForGPUDevice(ctx->primary_gpu, window);
-
-    return (SIWindow){ .ptr = (uint64_t)window };
-}
-
 void siengine_import(ecs_world_t *world, const siengine_props_t *props) {
     SDL_Init(SDL_INIT_VIDEO);
 
@@ -109,19 +113,34 @@ void siengine_import(ecs_world_t *world, const siengine_props_t *props) {
 
     ECS_RESOURCE_REGISTER(world, SIEngineCtx);
     ECS_COMPONENT_REGISTER(world, SIWindow);
+    ECS_COMPONENT_REGISTER(world, SIWindowHandle);
 
     ecs_set_resource(world, SIEngineCtx, { .primary_gpu = gpu });
 
-    ecs_system(world, { .name = "BeginDrawing", .phase = EcsPreRender, .callback = begin_drawing });
     ecs_system(
         world,
-        { .name = "Drawing",
-          .query.terms = { ecs_inout(SIWindow) },
-          .phase = EcsPreRender,
-          .callback = drawing }
+        {
+            .name = "BeginDrawing",
+            .phase = EcsPreRender,
+            .callback = begin_drawing,
+        }
     );
     ecs_system(
         world,
-        { .name = "EndDrawing", .query.terms = {}, .phase = EcsPreRender, .callback = end_drawing }
+        {
+            .name = "Drawing",
+            .query.terms = { ecs_inout(SIWindowHandle) },
+            .phase = EcsPreRender,
+            .callback = drawing,
+        }
+    );
+    ecs_system(
+        world,
+        {
+            .name = "EndDrawing",
+            .query.terms = {},
+            .phase = EcsPreRender,
+            .callback = end_drawing,
+        }
     );
 }

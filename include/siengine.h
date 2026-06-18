@@ -10,9 +10,9 @@ extern "C" {
 #endif
 
 ECS_MODULE_DECLARE(siengine, {});
-ECS_COMPONENT_DECLARE(SIWindow, { uint64_t ptr; });
-
-SIWindow siengine_create_window(ecs_world_t *world, const char *title);
+ECS_COMPONENT_DECLARE(SIWindow, {
+    char *title;
+});
 
 #ifdef __cplusplus
 }
