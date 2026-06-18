@@ -1,0 +1,16 @@
+#ifndef SIENGINE_H
+#define SIENGINE_H
+
+/* This generated file contains includes for project dependencies */
+#include "siecs.h"
+#include "siengine/bake_config.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
