@@ -8,7 +8,12 @@ int main(int argc, char *argv[]) {
 
     ecs_entity_t window = ecs_new(world);
     ecs_set(world, window, SIWindow, {
-        .handle = siengine_create_window(world, "engine").handle
+        .ptr = siengine_create_window(world, "engine").ptr
+    });
+
+    ecs_entity_t window2 = ecs_new(world);
+    ecs_set(world, window2, SIWindow, {
+        .ptr = siengine_create_window(world, "engine").ptr
     });
 
     while (ecs_progress(world)) {}
