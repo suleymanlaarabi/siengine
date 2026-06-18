@@ -2,7 +2,7 @@
   "id": "siengine",
   "type": "application",
   "value": {
-    "author": "John Doe",
+    "author": "Suleyman Laarabi",
     "description": "Room sharing for kids",
     "use": ["siecs"]
   },
