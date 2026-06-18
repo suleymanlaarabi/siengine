@@ -5,5 +5,10 @@
     "author": "John Doe",
     "description": "Room sharing for kids",
     "use": ["siecs"]
+  },
+  "bundle": {
+    "repositories": {
+      "siecs": "https://github.com/suleymanlaarabi/siecs"
+    }
   }
 }
