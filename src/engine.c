@@ -94,20 +94,3 @@ void siengine_import(ecs_world_t *world, const siengine_props_t *props) {
     ecs_system(world, { .name = "EndDrawing", .query.terms = {}, .phase = EcsPreRender, .callback = end_drawing });
 
 }
-
-int main() {
-    ecs_world_t *world = ecs_init();
-
-    ECS_MODULE_IMPORT(world, siengine, {});
-
-    ecs_entity_t window = ecs_new(world);
-    ecs_set(world, window, SIWindow, {siengine_create_window(world, "hey").handle});
-
-    ecs_entity_t window2 = ecs_new(world);
-    ecs_set(world, window2, SIWindow, {siengine_create_window(world, "hey").handle});
-
-    while (ecs_progress(world)) {
-
-    }
-    ecs_fini(world);
-}
