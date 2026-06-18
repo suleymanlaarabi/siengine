@@ -1,4 +1,3 @@
--fvisibility=hidden
 -fPIC
 -g
 -O0
@@ -14,6 +13,7 @@
 -fstack-protector-all
 -DBAKE_PROJECT_ID="siengine"
 -Dsiengine_EXPORTS
+-I./src
 -I./include
 -I
 /home/suleyman/bake/include
