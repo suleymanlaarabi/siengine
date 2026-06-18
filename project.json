@@ -10,5 +10,8 @@
     "repositories": {
       "siecs": "https://github.com/suleymanlaarabi/siecs"
     }
+  },
+  "lang.c": {
+    "lib": ["SDL3"]
   }
 }
