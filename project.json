@@ -13,6 +13,7 @@
     }
   },
   "lang.c": {
+    "c-standard": "c23",
     "lib": ["SDL3"]
   }
 }
