@@ -1,6 +1,7 @@
 #include "siecs.h"
 #include "siengine.h"
 #include <example.h>
+#include <string.h>
 
 int main(int argc, char *argv[]) {
     ecs_world_t *world = ecs_init();
@@ -8,12 +9,12 @@ int main(int argc, char *argv[]) {
 
     ecs_entity_t window = ecs_new(world);
     ecs_set(world, window, SIWindow, {
-        .ptr = siengine_create_window(world, "engine").ptr
+        .title = strdup("window 2")
     });
 
     ecs_entity_t window2 = ecs_new(world);
     ecs_set(world, window2, SIWindow, {
-        .ptr = siengine_create_window(world, "engine").ptr
+        .title = strdup("window 1")
     });
 
     while (ecs_progress(world)) {}
