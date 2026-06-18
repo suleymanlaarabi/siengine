@@ -1,6 +1,6 @@
 {
   "id": "siengine",
-  "type": "application",
+  "type": "package",
   "value": {
     "author": "Suleyman Laarabi",
     "description": "siecs based game engine",
