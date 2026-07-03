@@ -1,4 +1,5 @@
 #include "engine_internal.h"
+#include "siecs.h"
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_init.h>
 #include <siengine.h>
@@ -8,6 +9,7 @@ ECS_MODULE_DEFINE(siengine);
 ECS_RESOURCE_DEFINE(SIEngineCtx);
 
 void siengine_import(ecs_world_t *world, const siengine_props_t *props) {
+    ECS_MODULE_IMPORT(world, sitransform, {});
     SDL_Init(SDL_INIT_VIDEO);
 
     SDL_GPUDevice *gpu = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, "vulkan");
