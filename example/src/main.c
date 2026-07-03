@@ -15,6 +15,22 @@ int main(int argc, char *argv[]) {
 
     ecs_set(world, window2, SIWindow, { .title = strdup("coucou") });
 
+    // ecs_entity_t character = ecs_new(world);
+    // ecs_set(world, character, Position, { 0, 0 });
+    // ecs_set(world, character, Image, { "character.png" });
+    // ecs_set(world, player, Sprite, {
+    //     .texture_grid = {
+    //         .cell_width = 100,
+    //         .cell_height = 100,
+    //         .rows = 8,
+    //         .cols = 8,
+    //     },
+    //     .sprite = 0,
+    // });
+
+    ecs_entity_t player = ecs_new(world);
+    // ecs_is_a(world, player, character);
+
     while (ecs_progress(world)) {
     }
 
