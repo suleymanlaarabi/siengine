@@ -13,12 +13,12 @@ ECS_MODULE_DECLARE(siengine, {});
 ECS_COMPONENT_DECLARE(SIWindow, { char *title; });
 
 // Transform
-ECS_COMPONENT_DECLARE(Position2d, { float x, y; });
-ECS_COMPONENT_DECLARE(Rotation2d, { float angle; }); // radians
-ECS_COMPONENT_DECLARE(Scale2d, { float x, y; });
+ECS_COMPONENT_DECLARE(SIPosition2d, { float x, y; });
+ECS_COMPONENT_DECLARE(SIRotation2d, { float angle; }); // radians
+ECS_COMPONENT_DECLARE(SIScale2d, { float x, y; });
 
 // Physics
-ECS_COMPONENT_DECLARE(Velocity2d, { float x, y; });
+ECS_COMPONENT_DECLARE(SIVelocity2d, { float x, y; });
 
 #ifdef __cplusplus
 }
