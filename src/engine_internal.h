@@ -12,6 +12,8 @@ ECS_RESOURCE_DECLARE(SIEngineCtx, {
 
 ECS_COMPONENT_DECLARE(SIWindowHandle, { SDL_Window *handle; });
 
+ECS_MODULE_DECLARE(sitransform, {});
+
 void siwindow_register(ecs_world_t *world);
 void sirender_register(ecs_world_t *world);
 
