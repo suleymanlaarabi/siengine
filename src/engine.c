@@ -9,10 +9,8 @@
 ECS_MODULE_DEFINE(siengine);
 
 static void on_engine_remove(ecs_world_t *world, const void *ptr) {
-    (void)world;
-
     SIEngineCtx *ctx = (SIEngineCtx *)ptr;
-    sirender_shutdown(ctx);
+    sirender_shutdown(world, ctx);
     if (ctx->primary_gpu != NULL) {
         SDL_DestroyGPUDevice(ctx->primary_gpu);
     }

@@ -1,7 +1,11 @@
 #include "siecs.h"
 #include "siengine.h"
 #include <example.h>
+#include <math.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <string.h>
+#define DEG2RAD(deg) ((deg) * 0.01745329251994329576923690768489)
 
 static ecs_entity_t make_cube(
     ecs_world_t *world,
@@ -17,6 +21,14 @@ static ecs_entity_t make_cube(
     ecs_set_cid(world, cube, ecs_id(SIScale3d), &scale);
     ecs_set_cid(world, cube, ecs_id(SIColor), &color);
     return cube;
+}
+
+void rotate_cube(ecs_iter_t *it) {
+    SIRotation3d *rotations = ecs_field(it, 0);
+
+    for (uint32_t i = 0; i < it->count; i++) {
+        rotations[i].x += DEG2RAD(1);
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -69,6 +81,15 @@ int main(int argc, char *argv[]) {
         (SIRotation3d){ .x = -0.3f, .y = -0.4f, .z = 0.1f },
         (SIScale3d){ .x = 1.0f, .y = 0.7f, .z = 1.2f },
         (SIColor){ .r = 0.25f, .g = 0.9f, .b = 0.35f, .a = 1.0f }
+    );
+
+    ecs_system(
+        world,
+        {
+            .phase = EcsOnUpdate,
+            .query.terms = { ecs_out(SIRotation3d), ecs_filter(SICube) },
+            .callback = rotate_cube,
+        }
     );
 
     while (ecs_progress(world)) {

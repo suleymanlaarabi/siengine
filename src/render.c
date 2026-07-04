@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 typedef struct {
@@ -16,12 +17,13 @@ typedef struct {
 } SICubeVertex;
 
 typedef struct {
-    SIMat4 mvp;
+    SIMat4 view_projection;
 } SIVertexUniforms;
 
-typedef struct {
+struct SIInstanceData {
+    SIMat4 model;
     float color[4];
-} SIFragmentUniforms;
+};
 
 typedef struct {
     SDL_GPUShader *vertex;
@@ -98,7 +100,7 @@ static SDL_GPUShader *load_shader(
 static SIShaderPair load_cube_shaders(SDL_GPUDevice *gpu) {
     return (SIShaderPair){
         .vertex = load_shader(gpu, "shaders/cube.vert.spv", SDL_GPU_SHADERSTAGE_VERTEX, 1),
-        .fragment = load_shader(gpu, "shaders/cube.frag.spv", SDL_GPU_SHADERSTAGE_FRAGMENT, 1),
+        .fragment = load_shader(gpu, "shaders/cube.frag.spv", SDL_GPU_SHADERSTAGE_FRAGMENT, 0),
     };
 }
 
@@ -191,6 +193,11 @@ static bool ensure_cube_pipeline(SIEngineCtx *ctx, SDL_GPUTextureFormat color_fo
             .pitch = sizeof(SICubeVertex),
             .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
         },
+        {
+            .slot = 1,
+            .pitch = sizeof(SIInstanceData),
+            .input_rate = SDL_GPU_VERTEXINPUTRATE_INSTANCE,
+        },
     };
     SDL_GPUVertexAttribute vertex_attributes[] = {
         {
@@ -198,6 +205,36 @@ static bool ensure_cube_pipeline(SIEngineCtx *ctx, SDL_GPUTextureFormat color_fo
             .buffer_slot = 0,
             .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
             .offset = offsetof(SICubeVertex, x),
+        },
+        {
+            .location = 1,
+            .buffer_slot = 1,
+            .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,
+            .offset = offsetof(SIInstanceData, model) + sizeof(float) * 0,
+        },
+        {
+            .location = 2,
+            .buffer_slot = 1,
+            .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,
+            .offset = offsetof(SIInstanceData, model) + sizeof(float) * 4,
+        },
+        {
+            .location = 3,
+            .buffer_slot = 1,
+            .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,
+            .offset = offsetof(SIInstanceData, model) + sizeof(float) * 8,
+        },
+        {
+            .location = 4,
+            .buffer_slot = 1,
+            .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,
+            .offset = offsetof(SIInstanceData, model) + sizeof(float) * 12,
+        },
+        {
+            .location = 5,
+            .buffer_slot = 1,
+            .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,
+            .offset = offsetof(SIInstanceData, color),
         },
     };
     SDL_GPUColorTargetDescription color_targets[] = {
@@ -213,9 +250,9 @@ static bool ensure_cube_pipeline(SIEngineCtx *ctx, SDL_GPUTextureFormat color_fo
             .vertex_input_state =
                 {
                     .vertex_buffer_descriptions = vertex_buffers,
-                    .num_vertex_buffers = 1,
+                    .num_vertex_buffers = 2,
                     .vertex_attributes = vertex_attributes,
-                    .num_vertex_attributes = 1,
+                    .num_vertex_attributes = 6,
                 },
             .primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
             .rasterizer_state =
@@ -319,17 +356,9 @@ ensure_depth_target(SIEngineCtx *ctx, SDL_Window *window, uint32_t width, uint32
 }
 
 static bool find_active_camera(ecs_world_t *world, SIMat4 *view, const SICamera3d **camera) {
+    SIEngineCtx *ctx = ecs_resource(world, SIEngineCtx);
     bool found = false;
-    ecs_query_id_t q = ecs_query(
-        world,
-        { .terms = {
-              ecs_in(SICamera3d),
-              ecs_in(SIPosition3d),
-              ecs_in(SIRotation3d),
-              ecs_filter(SIActiveCamera),
-          } }
-    );
-    ecs_iter_t it = ecs_query_iter(world, q);
+    ecs_iter_t it = ecs_query_iter(world, ctx->camera_query);
 
     while (!found && ecs_iter_next(&it)) {
         SICamera3d *cameras = ecs_field(&it, 0);
@@ -343,31 +372,61 @@ static bool find_active_camera(ecs_world_t *world, SIMat4 *view, const SICamera3
         }
     }
 
-    ecs_query_fini(world, q);
     return found;
 }
 
-static void draw_cubes(ecs_world_t *world, SDL_GPURenderPass *pass, SIMat4 view_projection) {
-    SDL_GPUBufferBinding vertex_binding = {
-        .buffer = ecs_resource(world, SIEngineCtx)->cube_vertex_buffer
-    };
-    SDL_GPUBufferBinding index_binding = {
-        .buffer = ecs_resource(world, SIEngineCtx)->cube_index_buffer
-    };
-    SDL_BindGPUVertexBuffers(pass, 0, &vertex_binding, 1);
-    SDL_BindGPUIndexBuffer(pass, &index_binding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+static bool ensure_instance_capacity(SIEngineCtx *ctx, uint32_t needed) {
+    if (needed <= ctx->instance_capacity) {
+        return true;
+    }
 
-    ecs_query_id_t q = ecs_query(
-        world,
-        { .terms = {
-              ecs_in(SIPosition3d),
-              ecs_in(SIRotation3d),
-              ecs_in(SIScale3d),
-              ecs_in(SIColor),
-              ecs_filter(SICube),
-          } }
+    uint32_t capacity = ctx->instance_capacity ? ctx->instance_capacity : 64;
+    while (capacity < needed) {
+        capacity *= 2;
+    }
+
+    SIInstanceData *instances = realloc(ctx->instances, sizeof(SIInstanceData) * capacity);
+    if (instances == NULL) {
+        fprintf(stderr, "siengine: failed to grow cube instance CPU buffer\n");
+        return false;
+    }
+    ctx->instances = instances;
+
+    if (ctx->cube_instance_buffer != NULL) {
+        SDL_ReleaseGPUBuffer(ctx->primary_gpu, ctx->cube_instance_buffer);
+        ctx->cube_instance_buffer = NULL;
+    }
+    if (ctx->cube_instance_transfer != NULL) {
+        SDL_ReleaseGPUTransferBuffer(ctx->primary_gpu, ctx->cube_instance_transfer);
+        ctx->cube_instance_transfer = NULL;
+    }
+
+    uint32_t size = sizeof(SIInstanceData) * capacity;
+    ctx->cube_instance_buffer = SDL_CreateGPUBuffer(
+        ctx->primary_gpu,
+        &(SDL_GPUBufferCreateInfo){ .usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = size }
     );
-    ecs_iter_t cube_it = ecs_query_iter(world, q);
+    ctx->cube_instance_transfer = SDL_CreateGPUTransferBuffer(
+        ctx->primary_gpu,
+        &(SDL_GPUTransferBufferCreateInfo){
+            .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
+            .size = size,
+        }
+    );
+    if (ctx->cube_instance_buffer == NULL || ctx->cube_instance_transfer == NULL) {
+        fprintf(stderr, "siengine: failed to grow cube instance GPU buffers: %s\n", SDL_GetError());
+        return false;
+    }
+
+    ctx->instance_capacity = capacity;
+    return true;
+}
+
+static bool build_cube_instances(ecs_world_t *world) {
+    SIEngineCtx *ctx = ecs_resource(world, SIEngineCtx);
+    ctx->instance_count = 0;
+
+    ecs_iter_t cube_it = ecs_query_iter(world, ctx->cube_query);
 
     while (ecs_iter_next(&cube_it)) {
         SIPosition3d *positions = ecs_field(&cube_it, 0);
@@ -375,32 +434,73 @@ static void draw_cubes(ecs_world_t *world, SDL_GPURenderPass *pass, SIMat4 view_
         SIScale3d *scales = ecs_field(&cube_it, 2);
         SIColor *colors = ecs_field(&cube_it, 3);
 
-        for (uint32_t i = 0; i < cube_it.count; i++) {
-            SIMat4 model = si_mat4_model(positions[i], rotations[i], scales[i]);
-            SIVertexUniforms vertex_uniforms = {
-                .mvp = si_mat4_mul(view_projection, model),
-            };
-            SIFragmentUniforms fragment_uniforms = {
-                .color = { colors[i].r, colors[i].g, colors[i].b, colors[i].a },
-            };
+        if (!ensure_instance_capacity(ctx, ctx->instance_count + cube_it.count)) {
+            return false;
+        }
 
-            SDL_PushGPUVertexUniformData(
-                ecs_resource(world, SIEngineCtx)->cmd,
-                0,
-                &vertex_uniforms,
-                sizeof(vertex_uniforms)
-            );
-            SDL_PushGPUFragmentUniformData(
-                ecs_resource(world, SIEngineCtx)->cmd,
-                0,
-                &fragment_uniforms,
-                sizeof(fragment_uniforms)
-            );
-            SDL_DrawGPUIndexedPrimitives(pass, 36, 1, 0, 0, 0);
+        for (uint32_t i = 0; i < cube_it.count; i++) {
+            SIInstanceData *instance = &ctx->instances[ctx->instance_count++];
+            instance->model = si_mat4_model(positions[i], rotations[i], scales[i]);
+            instance->color[0] = colors[i].r;
+            instance->color[1] = colors[i].g;
+            instance->color[2] = colors[i].b;
+            instance->color[3] = colors[i].a;
         }
     }
 
-    ecs_query_fini(world, q);
+    return true;
+}
+
+static bool upload_cube_instances(SIEngineCtx *ctx) {
+    if (ctx->instance_count == 0) {
+        return true;
+    }
+
+    uint32_t size = sizeof(SIInstanceData) * ctx->instance_count;
+    void *mapped = SDL_MapGPUTransferBuffer(ctx->primary_gpu, ctx->cube_instance_transfer, true);
+    if (mapped == NULL) {
+        fprintf(
+            stderr,
+            "siengine: SDL_MapGPUTransferBuffer(instance) failed: %s\n",
+            SDL_GetError()
+        );
+        return false;
+    }
+
+    memcpy(mapped, ctx->instances, size);
+    SDL_UnmapGPUTransferBuffer(ctx->primary_gpu, ctx->cube_instance_transfer);
+
+    SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(ctx->cmd);
+    SDL_UploadToGPUBuffer(
+        copy,
+        &(SDL_GPUTransferBufferLocation){ .transfer_buffer = ctx->cube_instance_transfer,
+                                          .offset = 0 },
+        &(SDL_GPUBufferRegion){ .buffer = ctx->cube_instance_buffer, .offset = 0, .size = size },
+        true
+    );
+    SDL_EndGPUCopyPass(copy);
+
+    return true;
+}
+
+static void draw_cubes(SIEngineCtx *ctx, SDL_GPURenderPass *pass, SIMat4 view_projection) {
+    if (ctx->instance_count == 0) {
+        return;
+    }
+
+    SDL_GPUBufferBinding vertex_bindings[] = {
+        { .buffer = ctx->cube_vertex_buffer },
+        { .buffer = ctx->cube_instance_buffer },
+    };
+    SDL_GPUBufferBinding index_binding = { .buffer = ctx->cube_index_buffer };
+    SIVertexUniforms vertex_uniforms = {
+        .view_projection = view_projection,
+    };
+
+    SDL_PushGPUVertexUniformData(ctx->cmd, 0, &vertex_uniforms, sizeof(vertex_uniforms));
+    SDL_BindGPUVertexBuffers(pass, 0, vertex_bindings, 2);
+    SDL_BindGPUIndexBuffer(pass, &index_binding, SDL_GPU_INDEXELEMENTSIZE_16BIT);
+    SDL_DrawGPUIndexedPrimitives(pass, 36, ctx->instance_count, 0, 0, 0);
 }
 
 static void drawing(ecs_iter_t *it) {
@@ -414,6 +514,13 @@ static void drawing(ecs_iter_t *it) {
     SIMat4 view;
     const SICamera3d *camera = NULL;
     if (!find_active_camera(it->world, &view, &camera)) {
+        return;
+    }
+
+    if (!build_cube_instances(it->world)) {
+        return;
+    }
+    if (!upload_cube_instances(ctx)) {
         return;
     }
 
@@ -472,7 +579,7 @@ static void drawing(ecs_iter_t *it) {
 
         SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(ctx->cmd, &color_target, 1, &depth_target);
         SDL_BindGPUGraphicsPipeline(pass, ctx->cube_pipeline);
-        draw_cubes(it->world, pass, view_projection);
+        draw_cubes(ctx, pass, view_projection);
         SDL_EndGPURenderPass(pass);
     }
 }
@@ -487,8 +594,26 @@ static void end_drawing(ecs_iter_t *it) {
     ctx->cmd = NULL;
 }
 
-void sirender_shutdown(SIEngineCtx *ctx) {
-    if (ctx == NULL || ctx->primary_gpu == NULL) {
+void sirender_shutdown(ecs_world_t *world, SIEngineCtx *ctx) {
+    if (ctx == NULL) {
+        return;
+    }
+
+    if (ctx->cube_query) {
+        ecs_query_fini(world, ctx->cube_query);
+        ctx->cube_query = 0;
+    }
+    if (ctx->camera_query) {
+        ecs_query_fini(world, ctx->camera_query);
+        ctx->camera_query = 0;
+    }
+
+    free(ctx->instances);
+    ctx->instances = NULL;
+    ctx->instance_count = 0;
+    ctx->instance_capacity = 0;
+
+    if (ctx->primary_gpu == NULL) {
         return;
     }
 
@@ -511,9 +636,38 @@ void sirender_shutdown(SIEngineCtx *ctx) {
         SDL_ReleaseGPUBuffer(ctx->primary_gpu, ctx->cube_index_buffer);
         ctx->cube_index_buffer = NULL;
     }
+    if (ctx->cube_instance_buffer != NULL) {
+        SDL_ReleaseGPUBuffer(ctx->primary_gpu, ctx->cube_instance_buffer);
+        ctx->cube_instance_buffer = NULL;
+    }
+    if (ctx->cube_instance_transfer != NULL) {
+        SDL_ReleaseGPUTransferBuffer(ctx->primary_gpu, ctx->cube_instance_transfer);
+        ctx->cube_instance_transfer = NULL;
+    }
 }
 
 void sirender_register(ecs_world_t *world) {
+    SIEngineCtx *ctx = ecs_resource(world, SIEngineCtx);
+    ctx->cube_query = ecs_query(
+        world,
+        { .terms = {
+              ecs_in(SIPosition3d),
+              ecs_in(SIRotation3d),
+              ecs_in(SIScale3d),
+              ecs_in(SIColor),
+              ecs_filter(SICube),
+          } }
+    );
+    ctx->camera_query = ecs_query(
+        world,
+        { .terms = {
+              ecs_in(SICamera3d),
+              ecs_in(SIPosition3d),
+              ecs_in(SIRotation3d),
+              ecs_filter(SIActiveCamera),
+          } }
+    );
+
     ecs_system(
         world,
         {
