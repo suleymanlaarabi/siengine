@@ -14,7 +14,7 @@
   },
   "lang.c": {
     "c-standard": "c23",
-    "lib": ["SDL3", "SDL3_image"],
+    "lib": ["SDL3", "SDL3_image", "m"],
     "include": ["src"],
     "export-symbols": true
   }

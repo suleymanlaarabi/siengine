@@ -1,5 +1,7 @@
 #include "engine_internal.h"
+#include <SDL3/SDL_error.h>
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_video.h>
 #include <siengine.h>
 #include <stdint.h>
@@ -12,8 +14,10 @@ on_window_remove(ecs_world_t *world, ecs_entity_t entity, ecs_component_t compon
     SIWindowHandle *handle = ecs_get(world, entity, SIWindowHandle);
     SIWindow *window_desc = data;
 
-    if (handle != NULL && handle->handle != NULL) {
+    if (handle != NULL && handle->handle != NULL && ctx->primary_gpu != NULL) {
         SDL_ReleaseWindowFromGPUDevice(ctx->primary_gpu, handle->handle);
+    }
+    if (handle != NULL && handle->handle != NULL) {
         SDL_DestroyWindow(handle->handle);
         ecs_remove(world, entity, SIWindowHandle);
     }
@@ -38,13 +42,46 @@ static void on_window_set(
         free(old_desc->title);
     }
 
+    uint32_t width = window_desc->width ? window_desc->width : 1280;
+    uint32_t height = window_desc->height ? window_desc->height : 720;
+
     if (handle) {
         SDL_SetWindowTitle(handle->handle, window_desc->title);
+        SDL_SetWindowResizable(handle->handle, window_desc->resizable);
+        SDL_SetWindowSize(handle->handle, (int)width, (int)height);
+        handle->width = width;
+        handle->height = height;
     } else {
-        SDL_Window *window = SDL_CreateWindow(window_desc->title, 1280, 720, SDL_WINDOW_RESIZABLE);
-        SDL_ClaimWindowForGPUDevice(ctx->primary_gpu, window);
+        SDL_WindowFlags flags = window_desc->resizable ? SDL_WINDOW_RESIZABLE : 0;
+        SDL_Window *window = SDL_CreateWindow(window_desc->title, (int)width, (int)height, flags);
+        if (window == NULL) {
+            fprintf(stderr, "siengine: SDL_CreateWindow failed: %s\n", SDL_GetError());
+            return;
+        }
 
-        ecs_set(world, entity, SIWindowHandle, { .handle = window });
+        if (ctx->primary_gpu != NULL) {
+            if (!SDL_ClaimWindowForGPUDevice(ctx->primary_gpu, window)) {
+                fprintf(
+                    stderr,
+                    "siengine: SDL_ClaimWindowForGPUDevice failed: %s\n",
+                    SDL_GetError()
+                );
+            } else {
+                SDL_SetGPUSwapchainParameters(
+                    ctx->primary_gpu,
+                    window,
+                    SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
+                    window_desc->vsync ? SDL_GPU_PRESENTMODE_VSYNC : SDL_GPU_PRESENTMODE_IMMEDIATE
+                );
+            }
+        }
+
+        ecs_set(
+            world,
+            entity,
+            SIWindowHandle,
+            { .handle = window, .width = width, .height = height }
+        );
     }
 }
 
@@ -52,7 +89,8 @@ static void PollWindowEvents(ecs_iter_t *it) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
         if (e.type == SDL_EVENT_QUIT) {
-            exit(0);
+            ecs_quit(it->world);
+            return;
         }
 
         if (e.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
@@ -65,6 +103,7 @@ static void PollWindowEvents(ecs_iter_t *it) {
                 for (uint32_t i = 0; i < q_it.count; i++) {
                     if (SDL_GetWindowID(windows[i].handle) == closed_id) {
                         ecs_kill(it->world, q_it.entities[i]); // window is destroy on remove
+                        ecs_quit(it->world);
                         break;
                     }
                 }

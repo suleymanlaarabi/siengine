@@ -1,0 +1,27 @@
+{
+  "id": "siengine.test",
+  "type": "application",
+  "value": {
+    "public": false,
+    "clangd": true,
+    "use": ["siengine", "siecs"]
+  },
+  "test": {
+    "testsuites": [
+      {
+        "id": "component",
+        "testcases": [
+          "cube_query_matches_transform_and_color",
+          "camera_query_matches_active_camera"
+        ]
+      },
+      {
+        "id": "math",
+        "testcases": [
+          "model_applies_translation_scale",
+          "perspective_has_expected_terms"
+        ]
+      }
+    ]
+  }
+}
