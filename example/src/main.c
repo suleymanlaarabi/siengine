@@ -26,8 +26,9 @@ static ecs_entity_t make_cube(
 void rotate_cube(ecs_iter_t *it) {
     SIRotation3d *rotations = ecs_field(it, 0);
 
+    printf("delta = %.6f\n", it->delta_time);
     for (uint32_t i = 0; i < it->count; i++) {
-        rotations[i].x += DEG2RAD(1);
+        rotations[i].x += DEG2RAD(10) * it->delta_time;
     }
 }
 
