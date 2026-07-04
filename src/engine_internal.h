@@ -33,7 +33,7 @@ ECS_RESOURCE_DECLARE(SIEngineCtx, {
 });
 
 ECS_COMPONENT_DECLARE(SIWindowHandle, {
-    SDL_Window *handle;
+    ptr handle;
     uint32_t width;
     uint32_t height;
 });
