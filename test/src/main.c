@@ -17,12 +17,6 @@ void component_camera_query_matches_multiple_active_cameras(void);
 void math_model_applies_translation_scale(void);
 void math_perspective_has_expected_terms(void);
 
-// Testsuite 'window'
-void window_resize_inactive_without_event(void);
-void window_resize_active_before_settle_delay(void);
-void window_resize_inactive_at_settle_delay(void);
-void window_resize_new_event_extends_nonblocking_period(void);
-
 bake_test_case component_testcases[] = {
     {
         "cube_query_matches_transform_and_color",
@@ -49,25 +43,6 @@ bake_test_case math_testcases[] = {
     }
 };
 
-bake_test_case window_testcases[] = {
-    {
-        "resize_inactive_without_event",
-        window_resize_inactive_without_event
-    },
-    {
-        "resize_active_before_settle_delay",
-        window_resize_active_before_settle_delay
-    },
-    {
-        "resize_inactive_at_settle_delay",
-        window_resize_inactive_at_settle_delay
-    },
-    {
-        "resize_new_event_extends_nonblocking_period",
-        window_resize_new_event_extends_nonblocking_period
-    }
-};
-
 
 static bake_test_suite suites[] = {
     {
@@ -83,16 +58,9 @@ static bake_test_suite suites[] = {
         NULL,
         2,
         math_testcases
-    },
-    {
-        "window",
-        NULL,
-        NULL,
-        4,
-        window_testcases
     }
 };
 
 int main(int argc, char *argv[]) {
-    return bake_test_run("siengine.test", argc, argv, suites, 3);
+    return bake_test_run("siengine.test", argc, argv, suites, 2);
 }

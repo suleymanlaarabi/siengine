@@ -1,37 +1,37 @@
-#include <test.h>
+#include "test.h"
 
-static void register_scene_components(ecs_world_t *world) {
-    ECS_COMPONENT_REGISTER(world, SIPosition3d);
-    ECS_COMPONENT_REGISTER(world, SIRotation3d);
-    ECS_COMPONENT_REGISTER(world, SIScale3d);
-    ECS_COMPONENT_REGISTER(world, SIColor);
-    ECS_COMPONENT_REGISTER(world, SICube);
-    ECS_COMPONENT_REGISTER(world, SICamera3d);
-    ECS_COMPONENT_REGISTER(world, SIActiveCamera);
+static void register_scene_components() {
+
+    ECS_COMPONENT_REGISTER(SIPosition3d);
+    ECS_COMPONENT_REGISTER(SIRotation3d);
+    ECS_COMPONENT_REGISTER(SIScale3d);
+    ECS_COMPONENT_REGISTER(SIColor);
+    ECS_COMPONENT_REGISTER(SICube);
+    ECS_COMPONENT_REGISTER(SICamera3d);
+    ECS_COMPONENT_REGISTER(SIActiveCamera);
 }
 
 void component_cube_query_matches_transform_and_color(void) {
-    ecs_world_t *world = ecs_init();
-    register_scene_components(world);
+    ecs_init();
+    register_scene_components();
 
-    ecs_entity_t cube = ecs_new(world);
-    ecs_add(world, cube, SICube);
-    ecs_set(world, cube, SIPosition3d, { .x = 1.0f, .y = 2.0f, .z = 3.0f });
-    ecs_set(world, cube, SIRotation3d, { .x = 0.1f, .y = 0.2f, .z = 0.3f });
-    ecs_set(world, cube, SIScale3d, { .x = 2.0f, .y = 2.0f, .z = 2.0f });
-    ecs_set(world, cube, SIColor, { .r = 0.2f, .g = 0.4f, .b = 0.6f, .a = 1.0f });
+    ecs_entity_t cube = ecs_new();
+    ecs_add(cube, SICube);
+    ecs_set(cube, SIPosition3d, { .x = 1.0f, .y = 2.0f, .z = 3.0f });
+    ecs_set(cube, SIRotation3d, { .x = 0.1f, .y = 0.2f, .z = 0.3f });
+    ecs_set(cube, SIScale3d, { .x = 2.0f, .y = 2.0f, .z = 2.0f });
+    ecs_set(cube, SIColor, { .r = 0.2f, .g = 0.4f, .b = 0.6f, .a = 1.0f });
 
     ecs_query_id_t query = ecs_query(
-        world,
         { .terms = {
               ecs_in(SIPosition3d),
               ecs_in(SIRotation3d),
               ecs_in(SIScale3d),
               ecs_in(SIColor),
               ecs_filter(SICube),
-          } }
+          }, }
     );
-    ecs_iter_t it = ecs_query_iter(world, query);
+    ecs_iter_t it = ecs_query_iter(query);
 
     test_true(ecs_iter_next(&it));
     test_int(1, it.count);
@@ -47,27 +47,26 @@ void component_cube_query_matches_transform_and_color(void) {
     test_assert(colors[0].b == 0.6f);
     test_false(ecs_iter_next(&it));
 
-    ecs_query_fini(world, query);
-    ecs_fini(world);
+    ecs_query_fini(query);
+    ecs_fini();
 }
 
 void component_camera_query_matches_active_camera(void) {
-    ecs_world_t *world = ecs_init();
-    register_scene_components(world);
+    ecs_init();
+    register_scene_components();
 
-    ecs_entity_t inactive = ecs_new(world);
-    ecs_set(world, inactive, SIPosition3d, { .x = 0.0f, .y = 0.0f, .z = -3.0f });
-    ecs_set(world, inactive, SIRotation3d, { .x = 0.0f, .y = 0.0f, .z = 0.0f });
-    ecs_set(world, inactive, SICamera3d, { .fov_y = 1.0f, .near_clip = 0.1f, .far_clip = 10.0f });
+    ecs_entity_t inactive = ecs_new();
+    ecs_set(inactive, SIPosition3d, { .x = 0.0f, .y = 0.0f, .z = -3.0f });
+    ecs_set(inactive, SIRotation3d, { .x = 0.0f, .y = 0.0f, .z = 0.0f });
+    ecs_set(inactive, SICamera3d, { .fov_y = 1.0f, .near_clip = 0.1f, .far_clip = 10.0f });
 
-    ecs_entity_t active = ecs_new(world);
-    ecs_set(world, active, SIPosition3d, { .x = 0.0f, .y = 1.0f, .z = -6.0f });
-    ecs_set(world, active, SIRotation3d, { .x = 0.0f, .y = 0.0f, .z = 0.0f });
-    ecs_set(world, active, SICamera3d, { .fov_y = 1.0f, .near_clip = 0.1f, .far_clip = 100.0f });
-    ecs_add(world, active, SIActiveCamera);
+    ecs_entity_t active = ecs_new();
+    ecs_set(active, SIPosition3d, { .x = 0.0f, .y = 1.0f, .z = -6.0f });
+    ecs_set(active, SIRotation3d, { .x = 0.0f, .y = 0.0f, .z = 0.0f });
+    ecs_set(active, SICamera3d, { .fov_y = 1.0f, .near_clip = 0.1f, .far_clip = 100.0f });
+    ecs_add(active, SIActiveCamera);
 
     ecs_query_id_t query = ecs_query(
-        world,
         { .terms = {
               ecs_in(SICamera3d),
               ecs_in(SIPosition3d),
@@ -75,35 +74,34 @@ void component_camera_query_matches_active_camera(void) {
               ecs_filter(SIActiveCamera),
           } }
     );
-    ecs_iter_t it = ecs_query_iter(world, query);
+    ecs_iter_t it = ecs_query_iter(query);
 
     test_true(ecs_iter_next(&it));
     test_int(1, it.count);
     test_assert(it.entities[0] == active);
     test_false(ecs_iter_next(&it));
 
-    ecs_query_fini(world, query);
-    ecs_fini(world);
+    ecs_query_fini(query);
+    ecs_fini();
 }
 
 void component_camera_query_matches_multiple_active_cameras(void) {
-    ecs_world_t *world = ecs_init();
-    register_scene_components(world);
+    ecs_init();
+    register_scene_components();
 
-    ecs_entity_t first = ecs_new(world);
-    ecs_set(world, first, SIPosition3d, { .x = -1.0f, .y = 1.0f, .z = -6.0f });
-    ecs_set(world, first, SIRotation3d, { .x = 0.0f, .y = 0.0f, .z = 0.0f });
-    ecs_set(world, first, SICamera3d, { .fov_y = 1.0f, .near_clip = 0.1f, .far_clip = 100.0f });
-    ecs_add(world, first, SIActiveCamera);
+    ecs_entity_t first = ecs_new();
+    ecs_set(first, SIPosition3d, { .x = -1.0f, .y = 1.0f, .z = -6.0f });
+    ecs_set(first, SIRotation3d, { .x = 0.0f, .y = 0.0f, .z = 0.0f });
+    ecs_set(first, SICamera3d, { .fov_y = 1.0f, .near_clip = 0.1f, .far_clip = 100.0f });
+    ecs_add(first, SIActiveCamera);
 
-    ecs_entity_t second = ecs_new(world);
-    ecs_set(world, second, SIPosition3d, { .x = 1.0f, .y = 1.0f, .z = -6.0f });
-    ecs_set(world, second, SIRotation3d, { .x = 0.0f, .y = 0.2f, .z = 0.0f });
-    ecs_set(world, second, SICamera3d, { .fov_y = 0.8f, .near_clip = 0.1f, .far_clip = 50.0f });
-    ecs_add(world, second, SIActiveCamera);
+    ecs_entity_t second = ecs_new();
+    ecs_set(second, SIPosition3d, { .x = 1.0f, .y = 1.0f, .z = -6.0f });
+    ecs_set(second, SIRotation3d, { .x = 0.0f, .y = 0.2f, .z = 0.0f });
+    ecs_set(second, SICamera3d, { .fov_y = 0.8f, .near_clip = 0.1f, .far_clip = 50.0f });
+    ecs_add(second, SIActiveCamera);
 
     ecs_query_id_t query = ecs_query(
-        world,
         { .terms = {
               ecs_in(SICamera3d),
               ecs_in(SIPosition3d),
@@ -111,7 +109,7 @@ void component_camera_query_matches_multiple_active_cameras(void) {
               ecs_filter(SIActiveCamera),
           } }
     );
-    ecs_iter_t it = ecs_query_iter(world, query);
+    ecs_iter_t it = ecs_query_iter(query);
     uint32_t count = 0;
 
     while (ecs_iter_next(&it)) {
@@ -120,6 +118,6 @@ void component_camera_query_matches_multiple_active_cameras(void) {
 
     test_int(2, count);
 
-    ecs_query_fini(world, query);
-    ecs_fini(world);
+    ecs_query_fini(query);
+    ecs_fini();
 }
