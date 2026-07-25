@@ -4,7 +4,6 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 #define DEG2RAD(deg) ((deg) * 0.01745329251994329576923690768489)
 
 void rotate_cube(ecs_iter_t *it) {
@@ -26,7 +25,7 @@ int main(int argc, char *argv[]) {
     ecs_set(
         window,
         SIWindow,
-        { .title = strdup("siengine cubes"),
+        { .title = "siengine cubes",
           .width = 1280,
           .height = 720,
           .resizable = true,
@@ -41,10 +40,6 @@ int main(int argc, char *argv[]) {
 
     ecs_entity_t cube = ecs_new();
     ecs_add(cube, SICube);
-    ecs_add(cube, SIPosition3d);
-    ecs_add(cube, SIRotation3d);
-    ecs_add(cube, SIScale3d);
-    ecs_add(cube, SIColor);
     ecs_add(cube, Abstract);
 
     ecs_entity_t cube1 = ecs_new();
@@ -71,7 +66,7 @@ int main(int argc, char *argv[]) {
     ecs_system(
         {
             .phase = EcsOnUpdate,
-            .query.terms = { ecs_out(SIRotation3d), ecs_filter(SICube) },
+            .query.terms = { ecs_inout(SIRotation3d), ecs_filter(SICube) },
             .callback = rotate_cube,
         }
     );

@@ -145,8 +145,10 @@ void sitransform_import(const sitransform_props_t *props) {
     ECS_COMPONENT_REGISTER(SICube);
     ECS_COMPONENT_REGISTER(SIColor);
 
-    ecs_with(ecs_id(SIPosition3d), ecs_id(SIRotation3d));
-    ecs_with(ecs_id(SIPosition3d), ecs_id(SIScale3d));
     ecs_with(ecs_id(SICube), ecs_id(SIPosition3d));
+    ecs_with(ecs_id(SICube), ecs_id(SIRotation3d));
+    ecs_with(ecs_id(SICube), ecs_id(SIScale3d));
     ecs_with(ecs_id(SICube), ecs_id(SIColor));
+    ecs_with(ecs_id(SICamera3d), ecs_id(SIPosition3d));
+    ecs_with(ecs_id(SICamera3d), ecs_id(SIRotation3d));
 }

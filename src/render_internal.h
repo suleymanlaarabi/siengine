@@ -22,7 +22,6 @@ typedef struct SIInstanceData {
 } SIInstanceData;
 
 typedef struct {
-    ecs_entity_t entity;
     SIMat4 view;
     SICamera3d camera;
 } SIRenderView;
@@ -34,16 +33,14 @@ typedef struct {
     uint32_t height;
 } SIDepthTarget;
 
-ECS_RESOURCE_DECLARE(SIRenderQueries, { ecs_query_id_t cameras; });
-
-ECS_RESOURCE_DECLARE(SIRenderFrame, {
+typedef struct {
     SDL_GPUCommandBuffer *cmd;
     SIRenderView *views;
     uint32_t view_count;
     uint32_t view_capacity;
-});
+} SIRenderFrame;
 
-ECS_RESOURCE_DECLARE(SICubeRenderState, {
+typedef struct {
     SDL_GPUGraphicsPipeline *pipeline;
     SDL_GPUBuffer *vertex_buffer;
     SDL_GPUBuffer *index_buffer;
@@ -56,14 +53,18 @@ ECS_RESOURCE_DECLARE(SICubeRenderState, {
     bool instances_uploaded;
     SDL_GPUTextureFormat color_format;
     SDL_GPUTextureFormat depth_format;
-});
+} SICubeRenderState;
 
-ECS_RESOURCE_DECLARE(SIWindowRenderState, {
+typedef struct {
     SIDepthTarget depth_targets[8];
     uint32_t depth_target_count;
-});
+} SIWindowRenderState;
 
-void sirender_register_resources();
+ECS_RESOURCE_DECLARE(SIRenderState, {
+    SIRenderFrame frame;
+    SICubeRenderState cubes;
+    SIWindowRenderState windows;
+});
 
 void sirender_begin_frame(ecs_iter_t *it);
 void sirender_end_frame(ecs_iter_t *it);
@@ -79,7 +80,6 @@ void sicube_render_state_shutdown();
 SDL_GPUTexture *siwindow_ensure_depth_target(SDL_Window *window, uint32_t width, uint32_t height);
 void siwindow_render_state_shutdown();
 
-void sirender_queries_shutdown();
 void sirender_frame_shutdown();
 
 #endif

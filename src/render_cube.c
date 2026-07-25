@@ -27,7 +27,7 @@ static inline bool ensure_instance_cpu_capacity(SICubeRenderState *state, uint32
 
 static inline bool ensure_instance_gpu_capacity() {
     SIEngineCtx *engine = ecs_resource(SIEngineCtx);
-    SICubeRenderState *state = ecs_resource(SICubeRenderState);
+    SICubeRenderState *state = &ecs_resource(SIRenderState)->cubes;
     uint32_t size = sizeof(SIInstanceData) * state->instance_capacity;
 
     if (state->instance_buffer != NULL && state->instance_transfer != NULL &&
@@ -66,7 +66,7 @@ static inline bool ensure_instance_gpu_capacity() {
 }
 
 void sirender_extract_cube_instances(ecs_iter_t *it) {
-    SICubeRenderState *state = ecs_resource(SICubeRenderState);
+    SICubeRenderState *state = &ecs_resource(SIRenderState)->cubes;
     SIPosition3d *positions = ecs_field(it, 0);
     SIRotation3d *rotations = ecs_field(it, 1);
     SIScale3d *scales = ecs_field(it, 2);
@@ -87,8 +87,9 @@ void sirender_extract_cube_instances(ecs_iter_t *it) {
 }
 
 void sirender_upload_cube_instances(ecs_iter_t *it) {
-    SIRenderFrame *frame = ecs_resource(SIRenderFrame);
-    SICubeRenderState *state = ecs_resource(SICubeRenderState);
+    SIRenderState *render = ecs_resource(SIRenderState);
+    SIRenderFrame *frame = &render->frame;
+    SICubeRenderState *state = &render->cubes;
     if (state->instance_count == 0) {
         return;
     }
@@ -127,8 +128,9 @@ void sirender_upload_cube_instances(ecs_iter_t *it) {
 }
 
 void sicube_draw_instances(SDL_GPURenderPass *pass, SIMat4 view_projection) {
-    SIRenderFrame *frame = ecs_resource(SIRenderFrame);
-    SICubeRenderState *state = ecs_resource(SICubeRenderState);
+    SIRenderState *render = ecs_resource(SIRenderState);
+    SIRenderFrame *frame = &render->frame;
+    SICubeRenderState *state = &render->cubes;
     if (state->instance_count == 0 || !state->instances_uploaded) {
         return;
     }
@@ -150,7 +152,7 @@ void sicube_draw_instances(SDL_GPURenderPass *pass, SIMat4 view_projection) {
 
 void sicube_render_state_shutdown() {
     SIEngineCtx *engine = ecs_resource(SIEngineCtx);
-    SICubeRenderState *state = ecs_resource(SICubeRenderState);
+    SICubeRenderState *state = &ecs_resource(SIRenderState)->cubes;
 
     free(state->instances);
     state->instances = NULL;

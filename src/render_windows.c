@@ -4,8 +4,9 @@
 
 void sirender_draw_windows(ecs_iter_t *it) {
     SIEngineCtx *engine = ecs_resource(SIEngineCtx);
-    SIRenderFrame *frame = ecs_resource(SIRenderFrame);
-    SICubeRenderState *cubes = ecs_resource(SICubeRenderState);
+    SIRenderState *render = ecs_resource(SIRenderState);
+    SIRenderFrame *frame = &render->frame;
+    SICubeRenderState *cubes = &render->cubes;
     SIWindowHandle *windows = ecs_field(it, 0);
 
     if (frame->view_count == 0) {

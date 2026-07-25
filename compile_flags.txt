@@ -1,8 +1,6 @@
 -fPIC
--g
--fprofile-arcs
--ftest-coverage
--O0
+-O3
+-flto
 -std=c23
 
 -Wall
@@ -12,7 +10,7 @@
 -Wno-unused-parameter
 -D__BAKE__
 -D__BAKE__
--fstack-protector-all
+-DNDEBUG
 -DBAKE_PROJECT_ID="siengine"
 -Dsiengine_EXPORTS
 -I/home/suleyman/projects/siengine/src

@@ -24,24 +24,18 @@ static inline bool ensure_view_capacity(SIRenderFrame *frame, uint32_t needed) {
 }
 
 void sirender_extract_views(ecs_iter_t *it) {
-    SIRenderQueries *queries = ecs_resource(SIRenderQueries);
-    SIRenderFrame *frame = ecs_resource(SIRenderFrame);
-    ecs_iter_t camera_it = ecs_query_iter(queries->cameras);
+    SIRenderFrame *frame = &ecs_resource(SIRenderState)->frame;
+    SICamera3d *cameras = ecs_field(it, 0);
+    SIPosition3d *positions = ecs_field(it, 1);
+    SIRotation3d *rotations = ecs_field(it, 2);
 
-    while (ecs_iter_next(&camera_it)) {
-        SICamera3d *cameras = ecs_field(&camera_it, 0);
-        SIPosition3d *positions = ecs_field(&camera_it, 1);
-        SIRotation3d *rotations = ecs_field(&camera_it, 2);
+    if (!ensure_view_capacity(frame, frame->view_count + it->count)) {
+        return;
+    }
 
-        if (!ensure_view_capacity(frame, frame->view_count + camera_it.count)) {
-            return;
-        }
-
-        for (uint32_t i = 0; i < camera_it.count; i++) {
-            SIRenderView *view = &frame->views[frame->view_count++];
-            view->entity = camera_it.entities[i];
-            view->camera = cameras[i];
-            view->view = si_mat4_view(positions[i], rotations[i]);
-        }
+    for (uint32_t i = 0; i < it->count; i++) {
+        SIRenderView *view = &frame->views[frame->view_count++];
+        view->camera = cameras[i];
+        view->view = si_mat4_view(positions[i], rotations[i]);
     }
 }

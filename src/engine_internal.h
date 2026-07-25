@@ -7,11 +7,7 @@
 
 ECS_RESOURCE_DECLARE(SIEngineCtx, { SDL_GPUDevice *primary_gpu; });
 
-ECS_COMPONENT_DECLARE(SIWindowHandle, {
-    ptr handle;
-    uint32_t width;
-    uint32_t height;
-});
+ECS_COMPONENT_DECLARE(SIWindowHandle, { ptr handle; });
 
 ECS_MODULE_DECLARE(sitransform, {});
 

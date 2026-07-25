@@ -1,40 +1,16 @@
 #include "render_internal.h"
 
-ECS_RESOURCE_DEFINE(SIRenderQueries);
-ECS_RESOURCE_DEFINE(SIRenderFrame);
-ECS_RESOURCE_DEFINE(SICubeRenderState);
-ECS_RESOURCE_DEFINE(SIWindowRenderState);
-
-void sirender_register_resources() {
-    ECS_RESOURCE_REGISTER(SIRenderQueries);
-    ECS_RESOURCE_REGISTER(SIRenderFrame);
-    ECS_RESOURCE_REGISTER(SICubeRenderState);
-    ECS_RESOURCE_REGISTER(SIWindowRenderState);
-
-    ecs_query_id_t cameras = ecs_query(
-        { .terms = {
-              ecs_in(SICamera3d),
-              ecs_in(SIPosition3d),
-              ecs_in(SIRotation3d),
-              ecs_filter(SIActiveCamera),
-          } }
-    );
-
-    ecs_set_resource(SIRenderQueries, { .cameras = cameras });
-    ecs_set_resource(SIRenderFrame, {});
-    ecs_set_resource(SICubeRenderState, {});
-    ecs_set_resource(SIWindowRenderState, {});
-}
+ECS_RESOURCE_DEFINE(SIRenderState);
 
 void sirender_shutdown() {
     sicube_render_state_shutdown();
     siwindow_render_state_shutdown();
     sirender_frame_shutdown();
-    sirender_queries_shutdown();
 }
 
 void sirender_register() {
-    sirender_register_resources();
+    ECS_RESOURCE_REGISTER(SIRenderState);
+    ecs_set_resource(SIRenderState, {});
 
     ecs_system_id_t begin = ecs_system(
         {
@@ -43,9 +19,15 @@ void sirender_register() {
             .callback = sirender_begin_frame,
         }
     );
-    ecs_system_id_t extract_views = ecs_system(
+    ecs_system(
         {
             .name = "ExtractRenderViews",
+            .query.terms = {
+                ecs_in(SICamera3d),
+                ecs_in(SIPosition3d),
+                ecs_in(SIRotation3d),
+                ecs_filter(SIActiveCamera),
+            },
             .phase = EcsPreRender,
             .callback = sirender_extract_views,
             .after = { begin },
@@ -77,7 +59,7 @@ void sirender_register() {
     ecs_system(
         {
             .name = "DrawWindows",
-            .query.terms = { ecs_inout(SIWindowHandle) },
+            .query.terms = { ecs_in(SIWindowHandle) },
             .phase = EcsOnRender,
             .callback = sirender_draw_windows,
         }
@@ -89,6 +71,4 @@ void sirender_register() {
             .callback = sirender_end_frame,
         }
     );
-
-    (void)extract_views;
 }

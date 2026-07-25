@@ -13,7 +13,10 @@
         "testcases": [
           "cube_query_matches_transform_and_color",
           "camera_query_matches_active_camera",
-          "camera_query_matches_multiple_active_cameras"
+          "camera_query_matches_multiple_active_cameras",
+          "cube_adds_render_components",
+          "position_does_not_add_rotation_or_scale",
+          "camera_adds_position_and_rotation"
         ]
       },
       {
@@ -24,5 +27,8 @@
         ]
       }
     ]
+  },
+  "lang.c": {
+    "c-standard": "c23"
   }
 }

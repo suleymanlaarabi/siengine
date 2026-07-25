@@ -135,7 +135,7 @@ static bool upload_cube_mesh(SIEngineCtx *engine, SICubeRenderState *state) {
 
 bool sicube_ensure_pipeline(SDL_GPUTextureFormat color_format) {
     SIEngineCtx *engine = ecs_resource(SIEngineCtx);
-    SICubeRenderState *state = ecs_resource(SICubeRenderState);
+    SICubeRenderState *state = &ecs_resource(SIRenderState)->cubes;
 
     if (state->pipeline != NULL && state->color_format == color_format) {
         return true;

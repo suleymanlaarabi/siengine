@@ -11,7 +11,7 @@ extern "C" {
 
 ECS_MODULE_DECLARE(siengine, {});
 ECS_COMPONENT_DECLARE(SIWindow, {
-    char *title;
+    char title[128];
     uint32_t width;
     uint32_t height;
     bool resizable;

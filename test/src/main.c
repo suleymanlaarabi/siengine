@@ -12,6 +12,9 @@
 void component_cube_query_matches_transform_and_color(void);
 void component_camera_query_matches_active_camera(void);
 void component_camera_query_matches_multiple_active_cameras(void);
+void component_cube_adds_render_components(void);
+void component_position_does_not_add_rotation_or_scale(void);
+void component_camera_adds_position_and_rotation(void);
 
 // Testsuite 'math'
 void math_model_applies_translation_scale(void);
@@ -29,6 +32,18 @@ bake_test_case component_testcases[] = {
     {
         "camera_query_matches_multiple_active_cameras",
         component_camera_query_matches_multiple_active_cameras
+    },
+    {
+        "cube_adds_render_components",
+        component_cube_adds_render_components
+    },
+    {
+        "position_does_not_add_rotation_or_scale",
+        component_position_does_not_add_rotation_or_scale
+    },
+    {
+        "camera_adds_position_and_rotation",
+        component_camera_adds_position_and_rotation
     }
 };
 
@@ -49,7 +64,7 @@ static bake_test_suite suites[] = {
         "component",
         NULL,
         NULL,
-        3,
+        6,
         component_testcases
     },
     {

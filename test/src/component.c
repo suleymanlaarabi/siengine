@@ -1,15 +1,8 @@
 #include "test.h"
 
-static void register_scene_components() {
+ECS_MODULE_DECLARE(sitransform, {});
 
-    ECS_COMPONENT_REGISTER(SIPosition3d);
-    ECS_COMPONENT_REGISTER(SIRotation3d);
-    ECS_COMPONENT_REGISTER(SIScale3d);
-    ECS_COMPONENT_REGISTER(SIColor);
-    ECS_COMPONENT_REGISTER(SICube);
-    ECS_COMPONENT_REGISTER(SICamera3d);
-    ECS_COMPONENT_REGISTER(SIActiveCamera);
-}
+static void register_scene_components() { ECS_MODULE_IMPORT(sitransform, {}); }
 
 void component_cube_query_matches_transform_and_color(void) {
     ecs_init();
@@ -119,5 +112,47 @@ void component_camera_query_matches_multiple_active_cameras(void) {
     test_int(2, count);
 
     ecs_query_fini(query);
+    ecs_fini();
+}
+
+void component_cube_adds_render_components(void) {
+    ecs_init();
+    register_scene_components();
+
+    ecs_entity_t cube = ecs_new();
+    ecs_add(cube, SICube);
+
+    test_true(ecs_has(cube, SIPosition3d));
+    test_true(ecs_has(cube, SIRotation3d));
+    test_true(ecs_has(cube, SIScale3d));
+    test_true(ecs_has(cube, SIColor));
+
+    ecs_fini();
+}
+
+void component_position_does_not_add_rotation_or_scale(void) {
+    ecs_init();
+    register_scene_components();
+
+    ecs_entity_t point = ecs_new();
+    ecs_add(point, SIPosition3d);
+
+    test_false(ecs_has(point, SIRotation3d));
+    test_false(ecs_has(point, SIScale3d));
+
+    ecs_fini();
+}
+
+void component_camera_adds_position_and_rotation(void) {
+    ecs_init();
+    register_scene_components();
+
+    ecs_entity_t camera = ecs_new();
+    ecs_add(camera, SICamera3d);
+
+    test_true(ecs_has(camera, SIPosition3d));
+    test_true(ecs_has(camera, SIRotation3d));
+    test_false(ecs_has(camera, SIScale3d));
+
     ecs_fini();
 }

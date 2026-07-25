@@ -4,8 +4,9 @@
 
 SDL_GPUTexture *siwindow_ensure_depth_target(SDL_Window *window, uint32_t width, uint32_t height) {
     SIEngineCtx *engine = ecs_resource(SIEngineCtx);
-    SICubeRenderState *cubes = ecs_resource(SICubeRenderState);
-    SIWindowRenderState *state = ecs_resource(SIWindowRenderState);
+    SIRenderState *render = ecs_resource(SIRenderState);
+    SICubeRenderState *cubes = &render->cubes;
+    SIWindowRenderState *state = &render->windows;
 
     for (uint32_t i = 0; i < state->depth_target_count; i++) {
         SIDepthTarget *target = &state->depth_targets[i];
@@ -72,7 +73,7 @@ SDL_GPUTexture *siwindow_ensure_depth_target(SDL_Window *window, uint32_t width,
 
 void siwindow_render_state_shutdown() {
     SIEngineCtx *engine = ecs_resource(SIEngineCtx);
-    SIWindowRenderState *state = ecs_resource(SIWindowRenderState);
+    SIWindowRenderState *state = &ecs_resource(SIRenderState)->windows;
 
     for (uint32_t i = 0; i < state->depth_target_count; i++) {
         if (state->depth_targets[i].texture != NULL) {
