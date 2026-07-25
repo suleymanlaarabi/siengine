@@ -1,7 +1,8 @@
+-fvisibility=hidden
 -fPIC
 -O3
 -flto
--std=c23
+-std=gnu99
 
 -Wall
 -W
@@ -11,9 +12,8 @@
 -D__BAKE__
 -D__BAKE__
 -DNDEBUG
--DBAKE_PROJECT_ID="siengine"
--Dsiengine_EXPORTS
--I/home/suleyman/projects/siengine/src
--I/home/suleyman/projects/siengine/include
+-DBAKE_PROJECT_ID="siengine.test"
+-Dsiengine_test_EXPORTS
+-Itest/include
 -I
 /home/suleyman/bake/include

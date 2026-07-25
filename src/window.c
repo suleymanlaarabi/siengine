@@ -8,10 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void
-on_window_remove(ecs_world_t *world, ecs_entity_t entity, ecs_component_t component, void *data) {
-    SIEngineCtx *ctx = ecs_resource(world, SIEngineCtx);
-    SIWindowHandle *handle = ecs_get(world, entity, SIWindowHandle);
+static void on_window_remove(ecs_entity_t entity, ecs_component_t component, void *data) {
+    SIEngineCtx *ctx = ecs_resource(SIEngineCtx);
+    SIWindowHandle *handle = ecs_get(entity, SIWindowHandle);
     SIWindow *window_desc = data;
 
     if (handle != NULL && handle->handle != NULL && ctx->primary_gpu != NULL) {
@@ -19,23 +18,22 @@ on_window_remove(ecs_world_t *world, ecs_entity_t entity, ecs_component_t compon
     }
     if (handle != NULL && handle->handle != NULL) {
         SDL_DestroyWindow(handle->handle);
-        ecs_remove(world, entity, SIWindowHandle);
+        ecs_remove(entity, SIWindowHandle);
     }
 
     free(window_desc->title);
 }
 
 static void on_window_set(
-    ecs_world_t *world,
     ecs_entity_t entity,
     ecs_component_t component,
     const void *new_value,
     void *old_value
 ) {
-    SIEngineCtx *ctx = ecs_resource(world, SIEngineCtx);
+    SIEngineCtx *ctx = ecs_resource(SIEngineCtx);
     const SIWindow *window_desc = new_value;
 
-    SIWindowHandle *handle = ecs_try_get(world, entity, SIWindowHandle);
+    SIWindowHandle *handle = ecs_try_get(entity, SIWindowHandle);
 
     SIWindow *old_desc = old_value;
     if (old_desc->title) {
@@ -67,21 +65,44 @@ static void on_window_set(
                     SDL_GetError()
                 );
             } else {
-                SDL_SetGPUSwapchainParameters(
-                    ctx->primary_gpu,
-                    window,
-                    SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
-                    window_desc->vsync ? SDL_GPU_PRESENTMODE_VSYNC : SDL_GPU_PRESENTMODE_IMMEDIATE
-                );
+                SDL_GPUPresentMode present_mode = SDL_GPU_PRESENTMODE_VSYNC;
+                if (window_desc->vsync &&
+                    SDL_WindowSupportsGPUPresentMode(
+                        ctx->primary_gpu,
+                        window,
+                        SDL_GPU_PRESENTMODE_MAILBOX
+                    )) {
+                    present_mode = SDL_GPU_PRESENTMODE_MAILBOX;
+                } else if (!window_desc->vsync) {
+                    if (SDL_WindowSupportsGPUPresentMode(
+                            ctx->primary_gpu,
+                            window,
+                            SDL_GPU_PRESENTMODE_IMMEDIATE
+                        )) {
+                        present_mode = SDL_GPU_PRESENTMODE_IMMEDIATE;
+                    } else if (SDL_WindowSupportsGPUPresentMode(
+                                   ctx->primary_gpu, window, SDL_GPU_PRESENTMODE_MAILBOX
+                               )) {
+                        present_mode = SDL_GPU_PRESENTMODE_MAILBOX;
+                    }
+                }
+
+                if (!SDL_SetGPUSwapchainParameters(
+                        ctx->primary_gpu,
+                        window,
+                        SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
+                        present_mode
+                    )) {
+                    fprintf(
+                        stderr,
+                        "siengine: SDL_SetGPUSwapchainParameters failed: %s\n",
+                        SDL_GetError()
+                    );
+                }
             }
         }
 
-        ecs_set(
-            world,
-            entity,
-            SIWindowHandle,
-            { .handle = window, .width = width, .height = height }
-        );
+        ecs_set(entity, SIWindowHandle, { .handle = window, .width = width, .height = height });
     }
 }
 
@@ -89,27 +110,27 @@ static void PollWindowEvents(ecs_iter_t *it) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
         if (e.type == SDL_EVENT_QUIT) {
-            ecs_quit(it->world);
+            ecs_quit();
             return;
         }
 
         if (e.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
             SDL_WindowID closed_id = e.window.windowID;
-            ecs_query_id_t q = ecs_query(it->world, { .terms = { ecs_inout(SIWindowHandle) } });
-            ecs_iter_t q_it = ecs_query_iter(it->world, q);
+            ecs_query_id_t q = ecs_query({ .terms = { ecs_inout(SIWindowHandle) } });
+            ecs_iter_t q_it = ecs_query_iter(q);
 
             while (ecs_iter_next(&q_it)) {
                 SIWindowHandle *windows = ecs_field(&q_it, 0);
                 for (uint32_t i = 0; i < q_it.count; i++) {
                     if (SDL_GetWindowID(windows[i].handle) == closed_id) {
-                        ecs_kill(it->world, q_it.entities[i]); // window is destroy on remove
-                        ecs_quit(it->world);
+                        ecs_kill(q_it.entities[i]); // window is destroy on remove
+                        ecs_quit();
                         break;
                     }
                 }
             }
 
-            ecs_query_fini(it->world, q);
+            ecs_query_fini(q);
         }
     }
 }
@@ -117,12 +138,11 @@ static void PollWindowEvents(ecs_iter_t *it) {
 ECS_COMPONENT_DEFINE(SIWindow, .on_remove = on_window_remove, .on_set = on_window_set);
 ECS_COMPONENT_DEFINE(SIWindowHandle);
 
-void siwindow_register(ecs_world_t *world) {
-    ECS_COMPONENT_REGISTER(world, SIWindow);
-    ECS_COMPONENT_REGISTER(world, SIWindowHandle);
+void siwindow_register() {
+    ECS_COMPONENT_REGISTER(SIWindow);
+    ECS_COMPONENT_REGISTER(SIWindowHandle);
 
     ecs_system(
-        world,
         {
             .name = "PollWindowEvents",
             .phase = EcsPreRender,

@@ -14,24 +14,7 @@ ECS_COMPONENT_DEFINE(SICube);
 ECS_COMPONENT_DEFINE(SIColor);
 
 static SIMat4 si_mat4_identity(void) {
-    return (SIMat4){ .m = {
-                         1.0f,
-                         0.0f,
-                         0.0f,
-                         0.0f,
-                         0.0f,
-                         1.0f,
-                         0.0f,
-                         0.0f,
-                         0.0f,
-                         0.0f,
-                         1.0f,
-                         0.0f,
-                         0.0f,
-                         0.0f,
-                         0.0f,
-                         1.0f,
-                     } };
+    return (SIMat4){ .m = { 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,}, };
 }
 
 SIMat4 si_mat4_mul(SIMat4 lhs, SIMat4 rhs) {
@@ -131,34 +114,39 @@ SIMat4 si_mat4_perspective(float fov_y, float aspect, float near_clip, float far
     float f = 1.0f / tanf(fov_y * 0.5f);
     float range = far_clip - near_clip;
 
-    return (SIMat4){ .m = {
-                         f / aspect,
-                         0.0f,
-                         0.0f,
-                         0.0f,
-                         0.0f,
-                         f,
-                         0.0f,
-                         0.0f,
-                         0.0f,
-                         0.0f,
-                         far_clip / range,
-                         1.0f,
-                         0.0f,
-                         0.0f,
-                         -(near_clip * far_clip) / range,
-                         0.0f,
-                     } };
+    return (SIMat4){
+        .m = { f / aspect,
+               0.0f,
+               0.0f,
+               0.0f,
+               0.0f,
+               f,
+               0.0f,
+               0.0f,
+               0.0f,
+               0.0f,
+               far_clip / range,
+               1.0f,
+               0.0f,
+               0.0f,
+               -(near_clip * far_clip) / range,
+               0.0f },
+    };
 }
 
-void sitransform_import(ecs_world_t *world, const sitransform_props_t *props) {
+void sitransform_import(const sitransform_props_t *props) {
     (void)props;
 
-    ECS_COMPONENT_REGISTER(world, SIPosition3d);
-    ECS_COMPONENT_REGISTER(world, SIScale3d);
-    ECS_COMPONENT_REGISTER(world, SIRotation3d);
-    ECS_COMPONENT_REGISTER(world, SICamera3d);
-    ECS_COMPONENT_REGISTER(world, SIActiveCamera);
-    ECS_COMPONENT_REGISTER(world, SICube);
-    ECS_COMPONENT_REGISTER(world, SIColor);
+    ECS_COMPONENT_REGISTER(SIPosition3d);
+    ECS_COMPONENT_REGISTER(SIScale3d);
+    ECS_COMPONENT_REGISTER(SIRotation3d);
+    ECS_COMPONENT_REGISTER(SICamera3d);
+    ECS_COMPONENT_REGISTER(SIActiveCamera);
+    ECS_COMPONENT_REGISTER(SICube);
+    ECS_COMPONENT_REGISTER(SIColor);
+
+    ecs_with(ecs_id(SIPosition3d), ecs_id(SIRotation3d));
+    ecs_with(ecs_id(SIPosition3d), ecs_id(SIScale3d));
+    ecs_with(ecs_id(SICube), ecs_id(SIPosition3d));
+    ecs_with(ecs_id(SICube), ecs_id(SIColor));
 }

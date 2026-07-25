@@ -85,3 +85,41 @@ void component_camera_query_matches_active_camera(void) {
     ecs_query_fini(world, query);
     ecs_fini(world);
 }
+
+void component_camera_query_matches_multiple_active_cameras(void) {
+    ecs_world_t *world = ecs_init();
+    register_scene_components(world);
+
+    ecs_entity_t first = ecs_new(world);
+    ecs_set(world, first, SIPosition3d, { .x = -1.0f, .y = 1.0f, .z = -6.0f });
+    ecs_set(world, first, SIRotation3d, { .x = 0.0f, .y = 0.0f, .z = 0.0f });
+    ecs_set(world, first, SICamera3d, { .fov_y = 1.0f, .near_clip = 0.1f, .far_clip = 100.0f });
+    ecs_add(world, first, SIActiveCamera);
+
+    ecs_entity_t second = ecs_new(world);
+    ecs_set(world, second, SIPosition3d, { .x = 1.0f, .y = 1.0f, .z = -6.0f });
+    ecs_set(world, second, SIRotation3d, { .x = 0.0f, .y = 0.2f, .z = 0.0f });
+    ecs_set(world, second, SICamera3d, { .fov_y = 0.8f, .near_clip = 0.1f, .far_clip = 50.0f });
+    ecs_add(world, second, SIActiveCamera);
+
+    ecs_query_id_t query = ecs_query(
+        world,
+        { .terms = {
+              ecs_in(SICamera3d),
+              ecs_in(SIPosition3d),
+              ecs_in(SIRotation3d),
+              ecs_filter(SIActiveCamera),
+          } }
+    );
+    ecs_iter_t it = ecs_query_iter(world, query);
+    uint32_t count = 0;
+
+    while (ecs_iter_next(&it)) {
+        count += it.count;
+    }
+
+    test_int(2, count);
+
+    ecs_query_fini(world, query);
+    ecs_fini(world);
+}
