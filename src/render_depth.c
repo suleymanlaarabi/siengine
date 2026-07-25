@@ -64,10 +64,6 @@ SDL_GPUTexture *siwindow_ensure_depth_target(SDL_Window *window, uint32_t width,
         }
     );
 
-    if (target->texture == NULL) {
-        fprintf(stderr, "siengine: SDL_CreateGPUTexture(depth) failed: %s\n", SDL_GetError());
-    }
-
     return target->texture;
 }
 

@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static inline bool ensure_view_capacity(SIRenderFrame *frame, uint32_t needed) {
+static inline void ensure_view_capacity(SIRenderFrame *frame, uint32_t needed) {
     if (needed <= frame->view_capacity) {
-        return true;
+        return;
     }
 
     uint32_t capacity = frame->view_capacity ? frame->view_capacity : 4;
@@ -12,15 +12,8 @@ static inline bool ensure_view_capacity(SIRenderFrame *frame, uint32_t needed) {
         capacity *= 2;
     }
 
-    SIRenderView *views = realloc(frame->views, sizeof(SIRenderView) * capacity);
-    if (views == NULL) {
-        fprintf(stderr, "siengine: failed to grow render view buffer\n");
-        return false;
-    }
-
-    frame->views = views;
+    frame->views = realloc(frame->views, sizeof(SIRenderView) * capacity);
     frame->view_capacity = capacity;
-    return true;
 }
 
 void sirender_extract_views(ecs_iter_t *it) {
@@ -29,9 +22,7 @@ void sirender_extract_views(ecs_iter_t *it) {
     SIPosition3d *positions = ecs_field(it, 1);
     SIRotation3d *rotations = ecs_field(it, 2);
 
-    if (!ensure_view_capacity(frame, frame->view_count + it->count)) {
-        return;
-    }
+    ensure_view_capacity(frame, frame->view_count + it->count);
 
     for (uint32_t i = 0; i < it->count; i++) {
         SIRenderView *view = &frame->views[frame->view_count++];

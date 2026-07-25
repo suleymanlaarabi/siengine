@@ -73,7 +73,7 @@ void sirender_extract_cube_instances(ecs_iter_t *it);
 void sirender_upload_cube_instances(ecs_iter_t *it);
 void sirender_draw_windows(ecs_iter_t *it);
 
-bool sicube_ensure_pipeline(SDL_GPUTextureFormat color_format);
+void sicube_ensure_pipeline(SDL_GPUTextureFormat color_format);
 void sicube_draw_instances(SDL_GPURenderPass *pass, SIMat4 view_projection);
 void sicube_render_state_shutdown();
 

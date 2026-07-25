@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-static inline bool ensure_instance_cpu_capacity(SICubeRenderState *state, uint32_t needed) {
+static inline void ensure_instance_cpu_capacity(SICubeRenderState *state, uint32_t needed) {
     if (needed <= state->instance_capacity) {
-        return true;
+        return;
     }
 
     uint32_t capacity = state->instance_capacity ? state->instance_capacity : 64;
@@ -15,24 +15,19 @@ static inline bool ensure_instance_cpu_capacity(SICubeRenderState *state, uint32
     }
 
     SIInstanceData *instances = realloc(state->instances, sizeof(SIInstanceData) * capacity);
-    if (instances == NULL) {
-        fprintf(stderr, "siengine: failed to grow cube instance CPU buffer\n");
-        return false;
-    }
 
     state->instances = instances;
     state->instance_capacity = capacity;
-    return true;
 }
 
-static inline bool ensure_instance_gpu_capacity() {
+static inline void ensure_instance_gpu_capacity() {
     SIEngineCtx *engine = ecs_resource(SIEngineCtx);
     SICubeRenderState *state = &ecs_resource(SIRenderState)->cubes;
     uint32_t size = sizeof(SIInstanceData) * state->instance_capacity;
 
     if (state->instance_buffer != NULL && state->instance_transfer != NULL &&
         state->instance_gpu_capacity >= state->instance_capacity) {
-        return true;
+        return;
     }
 
     if (state->instance_buffer != NULL) {
@@ -56,13 +51,8 @@ static inline bool ensure_instance_gpu_capacity() {
             .size = size,
         }
     );
-    if (state->instance_buffer == NULL || state->instance_transfer == NULL) {
-        fprintf(stderr, "siengine: failed to grow cube instance GPU buffers: %s\n", SDL_GetError());
-        return false;
-    }
 
     state->instance_gpu_capacity = state->instance_capacity;
-    return true;
 }
 
 void sirender_extract_cube_instances(ecs_iter_t *it) {
@@ -72,9 +62,7 @@ void sirender_extract_cube_instances(ecs_iter_t *it) {
     SIScale3d *scales = ecs_field(it, 2);
     SIColor *colors = ecs_field(it, 3);
 
-    if (!ensure_instance_cpu_capacity(state, state->instance_count + it->count)) {
-        return;
-    }
+    ensure_instance_cpu_capacity(state, state->instance_count + it->count);
 
     for (uint32_t i = 0; i < it->count; i++) {
         SIInstanceData *instance = &state->instances[state->instance_count++];
@@ -93,9 +81,7 @@ void sirender_upload_cube_instances(ecs_iter_t *it) {
     if (state->instance_count == 0) {
         return;
     }
-    if (!ensure_instance_gpu_capacity()) {
-        return;
-    }
+    ensure_instance_gpu_capacity();
 
     uint32_t size = sizeof(SIInstanceData) * state->instance_count;
     void *mapped = SDL_MapGPUTransferBuffer(
@@ -103,14 +89,6 @@ void sirender_upload_cube_instances(ecs_iter_t *it) {
         state->instance_transfer,
         true
     );
-    if (mapped == NULL) {
-        fprintf(
-            stderr,
-            "siengine: SDL_MapGPUTransferBuffer(instance) failed: %s\n",
-            SDL_GetError()
-        );
-        return;
-    }
 
     memcpy(mapped, state->instances, size);
     SDL_UnmapGPUTransferBuffer(ecs_resource(SIEngineCtx)->primary_gpu, state->instance_transfer);

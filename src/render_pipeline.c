@@ -72,7 +72,7 @@ static SIShaderPair load_cube_shaders(SDL_GPUDevice *gpu) {
     };
 }
 
-static bool upload_cube_mesh(SIEngineCtx *engine, SICubeRenderState *state) {
+static void upload_cube_mesh(SIEngineCtx *engine, SICubeRenderState *state) {
     uint32_t vertex_size = sizeof(CUBE_VERTICES);
     uint32_t index_size = sizeof(CUBE_INDICES);
     uint32_t transfer_size = vertex_size + index_size;
@@ -93,21 +93,7 @@ static bool upload_cube_mesh(SIEngineCtx *engine, SICubeRenderState *state) {
         }
     );
 
-    if (state->vertex_buffer == NULL || state->index_buffer == NULL || transfer == NULL) {
-        fprintf(stderr, "siengine: failed to create cube buffers: %s\n", SDL_GetError());
-        if (transfer != NULL) {
-            SDL_ReleaseGPUTransferBuffer(engine->primary_gpu, transfer);
-        }
-        return false;
-    }
-
     uint8_t *mapped = SDL_MapGPUTransferBuffer(engine->primary_gpu, transfer, false);
-    if (mapped == NULL) {
-        fprintf(stderr, "siengine: SDL_MapGPUTransferBuffer failed: %s\n", SDL_GetError());
-        SDL_ReleaseGPUTransferBuffer(engine->primary_gpu, transfer);
-        return false;
-    }
-
     memcpy(mapped, CUBE_VERTICES, vertex_size);
     memcpy(mapped + vertex_size, CUBE_INDICES, index_size);
     SDL_UnmapGPUTransferBuffer(engine->primary_gpu, transfer);
@@ -129,26 +115,18 @@ static bool upload_cube_mesh(SIEngineCtx *engine, SICubeRenderState *state) {
     SDL_EndGPUCopyPass(copy);
     SDL_SubmitGPUCommandBuffer(cmd);
     SDL_ReleaseGPUTransferBuffer(engine->primary_gpu, transfer);
-
-    return true;
 }
 
-bool sicube_ensure_pipeline(SDL_GPUTextureFormat color_format) {
+void sicube_ensure_pipeline(SDL_GPUTextureFormat color_format) {
     SIEngineCtx *engine = ecs_resource(SIEngineCtx);
     SICubeRenderState *state = &ecs_resource(SIRenderState)->cubes;
-
-    if (state->pipeline != NULL && state->color_format == color_format) {
-        return true;
-    }
 
     if (state->pipeline != NULL) {
         SDL_ReleaseGPUGraphicsPipeline(engine->primary_gpu, state->pipeline);
         state->pipeline = NULL;
     }
     if (state->vertex_buffer == NULL || state->index_buffer == NULL) {
-        if (!upload_cube_mesh(engine, state)) {
-            return false;
-        }
+        upload_cube_mesh(engine, state);
     }
 
     SIShaderPair shaders = load_cube_shaders(engine->primary_gpu);
@@ -159,7 +137,6 @@ bool sicube_ensure_pipeline(SDL_GPUTextureFormat color_format) {
         if (shaders.fragment != NULL) {
             SDL_ReleaseGPUShader(engine->primary_gpu, shaders.fragment);
         }
-        return false;
     }
 
     SDL_GPUVertexBufferDescription vertex_buffers[] = {
@@ -257,11 +234,4 @@ bool sicube_ensure_pipeline(SDL_GPUTextureFormat color_format) {
 
     SDL_ReleaseGPUShader(engine->primary_gpu, shaders.vertex);
     SDL_ReleaseGPUShader(engine->primary_gpu, shaders.fragment);
-
-    if (state->pipeline == NULL) {
-        fprintf(stderr, "siengine: SDL_CreateGPUGraphicsPipeline failed: %s\n", SDL_GetError());
-        return false;
-    }
-
-    return true;
 }
