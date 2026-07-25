@@ -1,8 +1,4 @@
 #include "render_internal.h"
-#include "siecs.h"
-#include "siengine.h"
-#include "siui.h"
-#include "siui_sdl_gpu.h"
 #include <SDL3/SDL_error.h>
 #include <stdio.h>
 
@@ -12,7 +8,6 @@ void sirender_draw_windows(ecs_iter_t *it) {
     SIRenderFrame *frame = &render->frame;
     SICubeRenderState *cubes = &render->cubes;
     SIWindowHandle *windows = ecs_field(it, 0);
-    SIUI *ui = ecs_resource(SIUI);
 
     for (uint32_t i = 0; i < it->count; i++) {
         SDL_GPUTexture *swapchain_texture = NULL;
@@ -96,21 +91,18 @@ void sirender_draw_windows(ecs_iter_t *it) {
 
             SDL_EndGPURenderPass(pass);
         }
-        if (ui->ui) {
-
-            if (!siui_sdlgpu_render(
-                    ui->ui,
-                    frame->cmd,
-                    swapchain_texture,
-                    pixel_width,
-                    pixel_height,
-                    (SDL_FColor){ 0.05f, 0.05f, 0.08f, 1.0f },
-                    !has_scene
-                )) {
+        if (!siui_render_window(
+                it->entities[i],
+                frame->cmd,
+                swapchain_texture,
+                pixel_width,
+                pixel_height,
+                (SDL_FColor){ 0.05f, 0.05f, 0.08f, 1.0f },
+                !has_scene
+            )) {
                 SDL_CancelGPUCommandBuffer(frame->cmd);
                 frame->cmd = NULL;
                 return;
-            }
         }
     }
 }

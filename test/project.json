@@ -25,6 +25,13 @@
           "model_applies_translation_scale",
           "perspective_has_expected_terms"
         ]
+      },
+      {
+        "id": "ui",
+        "testcases": [
+          "root_is_separate_from_window",
+          "root_can_be_added_before_window"
+        ]
       }
     ]
   },

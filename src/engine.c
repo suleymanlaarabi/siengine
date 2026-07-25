@@ -4,7 +4,6 @@
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_init.h>
-#include <SDL3_ttf/SDL_ttf.h>
 #include <siengine.h>
 #include <stdio.h>
 
@@ -12,6 +11,7 @@ ECS_MODULE_DEFINE(siengine);
 
 static void on_engine_remove(const void *ptr) {
     SIEngineCtx *ctx = (SIEngineCtx *)ptr;
+    siui_shutdown();
     sirender_shutdown();
     SDL_DestroyGPUDevice(ctx->primary_gpu);
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
@@ -23,7 +23,6 @@ void siengine_import(const siengine_props_t *) {
     ECS_MODULE_IMPORT(sitransform, {});
     SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland,x11", SDL_HINT_OVERRIDE);
     SDL_Init(SDL_INIT_VIDEO);
-    TTF_Init();
     fprintf(stderr, "siengine: SDL video driver: %s\n", SDL_GetCurrentVideoDriver());
 
 #ifdef NDEBUG
@@ -37,5 +36,6 @@ void siengine_import(const siengine_props_t *) {
     ecs_set_resource(SIEngineCtx, { .primary_gpu = gpu });
 
     siwindow_register();
+    siui_register();
     sirender_register();
 }

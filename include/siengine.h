@@ -17,10 +17,11 @@ ECS_COMPONENT_DECLARE(SIWindow, {
     uint32_t height;
     bool resizable;
     bool vsync;
-    sicomponent_fn_t ui;
 });
 
-ECS_RESOURCE_DECLARE(SIUI, { siui_sdlgpu_t *ui; });
+ECS_COMPONENT_DECLARE(SIUIRoot, {
+    sicomponent_fn_t render;
+});
 
 // Transform
 ECS_COMPONENT_DECLARE(SIPosition3d, { float x, y, z; });

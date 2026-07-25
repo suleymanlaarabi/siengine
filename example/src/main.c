@@ -82,9 +82,9 @@ int main(int argc, char *argv[]) {
             .height = 720,
             .resizable = true,
             .vsync = true,
-            .ui = counter_render,
         }
     );
+    ecs_set(window, SIUIRoot, { .render = counter_render });
 
     ecs_entity_t camera = ecs_new();
     ecs_set(camera, SIPosition3d, { .x = 0.0f, .y = 1.5f, .z = -6.0f });
