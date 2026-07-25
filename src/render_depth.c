@@ -71,11 +71,8 @@ SDL_GPUTexture *siwindow_ensure_depth_target(SDL_Window *window, uint32_t width,
 }
 
 void siwindow_render_state_shutdown() {
-    SIEngineCtx *engine = ecs_try_resource(SIEngineCtx);
-    SIWindowRenderState *state = ecs_try_resource(SIWindowRenderState);
-    if (engine == NULL || engine->primary_gpu == NULL || state == NULL) {
-        return;
-    }
+    SIEngineCtx *engine = ecs_resource(SIEngineCtx);
+    SIWindowRenderState *state = ecs_resource(SIWindowRenderState);
 
     for (uint32_t i = 0; i < state->depth_target_count; i++) {
         if (state->depth_targets[i].texture != NULL) {

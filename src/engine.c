@@ -12,9 +12,7 @@ ECS_MODULE_DEFINE(siengine);
 static void on_engine_remove(const void *ptr) {
     SIEngineCtx *ctx = (SIEngineCtx *)ptr;
     sirender_shutdown();
-    if (ctx->primary_gpu != NULL) {
-        SDL_DestroyGPUDevice(ctx->primary_gpu);
-    }
+    SDL_DestroyGPUDevice(ctx->primary_gpu);
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }
 
@@ -25,10 +23,7 @@ void siengine_import(const siengine_props_t *props) {
 
     ECS_MODULE_IMPORT(sitransform, {});
     SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "x11,wayland", SDL_HINT_OVERRIDE);
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
-        fprintf(stderr, "siengine: SDL_Init failed: %s\n", SDL_GetError());
-        return;
-    }
+    SDL_Init(SDL_INIT_VIDEO);
     fprintf(stderr, "siengine: SDL video driver: %s\n", SDL_GetCurrentVideoDriver());
 
 #ifdef NDEBUG
@@ -37,9 +32,6 @@ void siengine_import(const siengine_props_t *props) {
     const bool gpu_debug = true;
 #endif
     SDL_GPUDevice *gpu = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, gpu_debug, "vulkan");
-    if (gpu == NULL) {
-        fprintf(stderr, "siengine: SDL_CreateGPUDevice failed: %s\n", SDL_GetError());
-    }
 
     ECS_RESOURCE_REGISTER(SIEngineCtx);
     ecs_set_resource(SIEngineCtx, { .primary_gpu = gpu });

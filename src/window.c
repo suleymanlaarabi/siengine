@@ -13,13 +13,9 @@ static void on_window_remove(ecs_entity_t entity, ecs_component_t component, voi
     SIWindowHandle *handle = ecs_get(entity, SIWindowHandle);
     SIWindow *window_desc = data;
 
-    if (handle != NULL && handle->handle != NULL && ctx->primary_gpu != NULL) {
-        SDL_ReleaseWindowFromGPUDevice(ctx->primary_gpu, handle->handle);
-    }
-    if (handle != NULL && handle->handle != NULL) {
-        SDL_DestroyWindow(handle->handle);
-        ecs_remove(entity, SIWindowHandle);
-    }
+    SDL_ReleaseWindowFromGPUDevice(ctx->primary_gpu, handle->handle);
+    SDL_DestroyWindow(handle->handle);
+    ecs_remove(entity, SIWindowHandle);
 
     free(window_desc->title);
 }
@@ -52,55 +48,27 @@ static void on_window_set(
     } else {
         SDL_WindowFlags flags = window_desc->resizable ? SDL_WINDOW_RESIZABLE : 0;
         SDL_Window *window = SDL_CreateWindow(window_desc->title, (int)width, (int)height, flags);
-        if (window == NULL) {
-            fprintf(stderr, "siengine: SDL_CreateWindow failed: %s\n", SDL_GetError());
-            return;
-        }
+        SDL_ClaimWindowForGPUDevice(ctx->primary_gpu, window);
 
-        if (ctx->primary_gpu != NULL) {
-            if (!SDL_ClaimWindowForGPUDevice(ctx->primary_gpu, window)) {
-                fprintf(
-                    stderr,
-                    "siengine: SDL_ClaimWindowForGPUDevice failed: %s\n",
-                    SDL_GetError()
-                );
-            } else {
-                SDL_GPUPresentMode present_mode = SDL_GPU_PRESENTMODE_VSYNC;
-                if (window_desc->vsync &&
-                    SDL_WindowSupportsGPUPresentMode(
-                        ctx->primary_gpu,
-                        window,
-                        SDL_GPU_PRESENTMODE_MAILBOX
-                    )) {
-                    present_mode = SDL_GPU_PRESENTMODE_MAILBOX;
-                } else if (!window_desc->vsync) {
-                    if (SDL_WindowSupportsGPUPresentMode(
-                            ctx->primary_gpu,
-                            window,
-                            SDL_GPU_PRESENTMODE_IMMEDIATE
-                        )) {
-                        present_mode = SDL_GPU_PRESENTMODE_IMMEDIATE;
-                    } else if (SDL_WindowSupportsGPUPresentMode(
-                                   ctx->primary_gpu, window, SDL_GPU_PRESENTMODE_MAILBOX
-                               )) {
-                        present_mode = SDL_GPU_PRESENTMODE_MAILBOX;
-                    }
-                }
-
-                if (!SDL_SetGPUSwapchainParameters(
-                        ctx->primary_gpu,
-                        window,
-                        SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
-                        present_mode
-                    )) {
-                    fprintf(
-                        stderr,
-                        "siengine: SDL_SetGPUSwapchainParameters failed: %s\n",
-                        SDL_GetError()
-                    );
-                }
+        SDL_GPUPresentMode present_mode = SDL_GPU_PRESENTMODE_VSYNC;
+        if (window_desc->vsync &&
+            SDL_WindowSupportsGPUPresentMode(ctx->primary_gpu, window, SDL_GPU_PRESENTMODE_MAILBOX)) {
+            present_mode = SDL_GPU_PRESENTMODE_MAILBOX;
+        } else if (!window_desc->vsync) {
+            if (SDL_WindowSupportsGPUPresentMode(
+                    ctx->primary_gpu, window, SDL_GPU_PRESENTMODE_IMMEDIATE
+                )) {
+                present_mode = SDL_GPU_PRESENTMODE_IMMEDIATE;
+            } else if (SDL_WindowSupportsGPUPresentMode(
+                           ctx->primary_gpu, window, SDL_GPU_PRESENTMODE_MAILBOX
+                       )) {
+                present_mode = SDL_GPU_PRESENTMODE_MAILBOX;
             }
         }
+
+        SDL_SetGPUSwapchainParameters(
+            ctx->primary_gpu, window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, present_mode
+        );
 
         ecs_set(entity, SIWindowHandle, { .handle = window, .width = width, .height = height });
     }

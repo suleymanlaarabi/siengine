@@ -8,7 +8,7 @@ void sirender_draw_windows(ecs_iter_t *it) {
     SICubeRenderState *cubes = ecs_resource(SICubeRenderState);
     SIWindowHandle *windows = ecs_field(it, 0);
 
-    if (engine->primary_gpu == NULL || frame->cmd == NULL || frame->view_count == 0) {
+    if (frame->view_count == 0) {
         return;
     }
 

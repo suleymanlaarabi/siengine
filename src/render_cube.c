@@ -89,7 +89,7 @@ void sirender_extract_cube_instances(ecs_iter_t *it) {
 void sirender_upload_cube_instances(ecs_iter_t *it) {
     SIRenderFrame *frame = ecs_resource(SIRenderFrame);
     SICubeRenderState *state = ecs_resource(SICubeRenderState);
-    if (frame->cmd == NULL || state->instance_count == 0) {
+    if (state->instance_count == 0) {
         return;
     }
     if (!ensure_instance_gpu_capacity()) {
@@ -149,21 +149,14 @@ void sicube_draw_instances(SDL_GPURenderPass *pass, SIMat4 view_projection) {
 }
 
 void sicube_render_state_shutdown() {
-    SIEngineCtx *engine = ecs_try_resource(SIEngineCtx);
-    SICubeRenderState *state = ecs_try_resource(SICubeRenderState);
-    if (state == NULL) {
-        return;
-    }
+    SIEngineCtx *engine = ecs_resource(SIEngineCtx);
+    SICubeRenderState *state = ecs_resource(SICubeRenderState);
 
     free(state->instances);
     state->instances = NULL;
     state->instance_count = 0;
     state->instance_capacity = 0;
     state->instance_gpu_capacity = 0;
-
-    if (engine == NULL || engine->primary_gpu == NULL) {
-        return;
-    }
 
     if (state->pipeline != NULL) {
         SDL_ReleaseGPUGraphicsPipeline(engine->primary_gpu, state->pipeline);
