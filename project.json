@@ -5,16 +5,18 @@
     "author": "Suleyman Laarabi",
     "description": "siecs based game engine",
     "clangd": true,
-    "use": ["siecs"]
+    "use": ["siecs", "siui", "siui.sdl_gpu"]
   },
   "bundle": {
     "repositories": {
-      "siecs": "https://github.com/suleymanlaarabi/siecs"
+      "siecs": "https://github.com/suleymanlaarabi/siecs",
+      "siui": "https://github.com/suleymanlaarabi/siui",
+      "siui.sdl_gpu": "https://github.com/suleymanlaarabi/siui_sdl_gpu"
     }
   },
   "lang.c": {
     "c-standard": "c23",
-    "lib": ["SDL3", "SDL3_image", "m"],
+    "lib": ["SDL3", "SDL3_ttf", "SDL3_image", "m"],
     "include": ["src"],
     "export-symbols": true
   }

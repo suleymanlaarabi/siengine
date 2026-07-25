@@ -1,4 +1,5 @@
 #include "render_internal.h"
+#include "siecs.h"
 #include <stdlib.h>
 
 void sirender_begin_frame(ecs_iter_t *it) {
@@ -16,6 +17,10 @@ void sirender_begin_frame(ecs_iter_t *it) {
 
 void sirender_end_frame(ecs_iter_t *it) {
     SIRenderFrame *frame = &ecs_resource(SIRenderState)->frame;
+
+    if (!frame->cmd)
+        return;
+
     SDL_SubmitGPUCommandBuffer(frame->cmd);
     frame->cmd = NULL;
 }

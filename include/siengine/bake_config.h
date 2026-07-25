@@ -19,6 +19,8 @@
 
 /* Headers of public dependencies */
 #include <siecs.h>
+#include <siui.h>
+#include <siui_sdl_gpu.h>
 
 /* Convenience macro for exporting symbols */
 #ifndef siengine_STATIC

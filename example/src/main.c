@@ -1,5 +1,6 @@
 #include "siecs.h"
 #include "siengine.h"
+#include "siui.h"
 #include <example.h>
 #include <math.h>
 #include <stdint.h>
@@ -14,6 +15,56 @@ void rotate_cube(ecs_iter_t *it) {
     }
 }
 
+static void increment(const sievent_t *event) {
+    sistate_t count = (sistate_t)event->data;
+    int value = state_get(count, int);
+    state_set(count, int, value + 1);
+}
+
+static void decrement(const sievent_t *event) {
+    sistate_t count = (sistate_t)event->data;
+    int value = state_get(count, int);
+    state_set(count, int, value - 1);
+}
+
+#define button(...) component_impl(button, { __VA_ARGS__ })
+component(button, {
+    const char *label;
+    sievent_binding_t click;
+}) {
+    return node(
+        width(px(40)),
+        height(px(40)),
+        background(rgb(47, 54, 72)),
+        border(2, rgb(86, 96, 124), 10),
+        justify(center),
+        align(center),
+        .click = props.click,
+        children(text(props.label, font_size(22), text_color(rgb(245, 247, 252))))
+    );
+}
+
+#define counter(...) component_impl(counter, { __VA_ARGS__ })
+component(counter, {}) {
+    sistate_t count = use_state(int, { 0 });
+    int value = state_get(count, int);
+
+    return node(
+        width(px(420)),
+        height(px(100)),
+        padding(28),
+        gap(10),
+        align(center),
+        justify(center),
+        text_color(rgb(240, 242, 248)),
+        children(
+            button(.label = "−", on_click(decrement, count)),
+            textf("%d", value),
+            button(.label = "+", on_click(increment, count))
+        )
+    );
+}
+
 int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
@@ -25,11 +76,14 @@ int main(int argc, char *argv[]) {
     ecs_set(
         window,
         SIWindow,
-        { .title = "siengine cubes",
-          .width = 1280,
-          .height = 720,
-          .resizable = true,
-          .vsync = true }
+        {
+            .title = "siengine cubes",
+            .width = 1280,
+            .height = 720,
+            .resizable = true,
+            .vsync = true,
+            .ui = counter_render,
+        }
     );
 
     ecs_entity_t camera = ecs_new();

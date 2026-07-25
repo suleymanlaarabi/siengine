@@ -4,6 +4,7 @@
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_hints.h>
 #include <SDL3/SDL_init.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <siengine.h>
 #include <stdio.h>
 
@@ -18,12 +19,11 @@ static void on_engine_remove(const void *ptr) {
 
 ECS_RESOURCE_DEFINE(SIEngineCtx, .on_remove = on_engine_remove);
 
-void siengine_import(const siengine_props_t *props) {
-    (void)props;
-
+void siengine_import(const siengine_props_t *) {
     ECS_MODULE_IMPORT(sitransform, {});
-    SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "x11,wayland", SDL_HINT_OVERRIDE);
+    SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland,x11", SDL_HINT_OVERRIDE);
     SDL_Init(SDL_INIT_VIDEO);
+    TTF_Init();
     fprintf(stderr, "siengine: SDL video driver: %s\n", SDL_GetCurrentVideoDriver());
 
 #ifdef NDEBUG
