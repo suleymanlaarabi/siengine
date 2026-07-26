@@ -1,8 +1,8 @@
 #include "engine_internal.h"
 #include <SDL3/SDL_events.h>
 #include <SDL3_ttf/SDL_ttf.h>
-#include <siui_sdl_gpu.h>
 #include <siengine.h>
+#include <siui_sdl_gpu.h>
 
 #define SIUI_DEFAULT_FONT "/usr/share/fonts/noto/NotoSans-Regular.ttf"
 
@@ -14,9 +14,7 @@ ECS_RESOURCE_DECLARE(SIUIState, {
 
 ECS_RESOURCE_DEFINE(SIUIState);
 
-static SIUIState *siui_state(void) {
-    return ecs_resource(SIUIState);
-}
+static SIUIState *siui_state(void) { return ecs_resource(SIUIState); }
 
 static void siui_release(void) {
     SIUIState *state = siui_state();

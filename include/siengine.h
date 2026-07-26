@@ -10,6 +10,8 @@
 extern "C" {
 #endif
 
+#define DEG2RAD(deg) ((deg) * 0.01745329251994329576923690768489)
+
 ECS_MODULE_DECLARE(siengine, {});
 ECS_COMPONENT_DECLARE(SIWindow, {
     char title[128];
@@ -19,9 +21,7 @@ ECS_COMPONENT_DECLARE(SIWindow, {
     bool vsync;
 });
 
-ECS_COMPONENT_DECLARE(SIUIRoot, {
-    sicomponent_fn_t render;
-});
+ECS_COMPONENT_DECLARE(SIUIRoot, { sicomponent_fn_t render; });
 
 // Transform
 ECS_COMPONENT_DECLARE(SIPosition3d, { float x, y, z; });

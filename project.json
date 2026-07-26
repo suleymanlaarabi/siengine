@@ -5,7 +5,7 @@
     "author": "Suleyman Laarabi",
     "description": "siecs based game engine",
     "clangd": true,
-    "use": ["siecs", "siui", "siui.sdl_gpu"]
+    "use": ["siecs", "siui", "siui.sdl_gpu", "siui.quartz"]
   },
   "bundle": {
     "repositories": {
