@@ -115,8 +115,8 @@ bool siui_handle_event(const SDL_Event *event) {
         input.type = SIUI_EVENT_SCROLL;
         input.x = event->wheel.mouse_x;
         input.y = event->wheel.mouse_y;
-        input.delta_x = event->wheel.x;
-        input.delta_y = event->wheel.y;
+        input.delta_x = event->wheel.x * 12;
+        input.delta_y = event->wheel.y * 12;
         break;
     default:
         return false;

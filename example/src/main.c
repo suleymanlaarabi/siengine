@@ -16,46 +16,56 @@ void rotate_cube(ecs_iter_t *it) {
     }
 }
 
-component(entity_row, { ecs_entity_t entity; }) {
-    return button(children(fini_text(ecs_entity_name(props.entity))));
-}
+ecs_query_id_t entities_query = 0;
 
-#define entity_list(...) ui(entity_list, __VA_ARGS__)
-component(entity_list, {}) {
-    ecs_query_id_t query = ecs_query({});
-
-    children_builder(rows, ecs_query_count(query));
-
+static ecs_entity_t entity_key(uint32_t index, uintptr_t query) {
     ecs_iter_t it = ecs_query_iter(query);
+
     while (ecs_iter_next(&it)) {
-        for (uint32_t i = 0; i < it.count; i++) {
-            child(rows, keyed(it.entities[i], ui(entity_row, it.entities[i])));
-        }
+        if (index < it.count)
+            return it.entities[index];
+
+        index -= it.count;
     }
 
-    return node(direction(column), gap(4), children_from(rows));
+    return 0;
+}
+
+static sinode_desc_t
+render_entity(sirender_ctx_t *_siui_render_ctx, uint32_t index, uint64_t key, void *data) {
+    return node(height(px(44)), children(button(children(text(ecs_entity_name(key))))));
+}
+
+component(entity_list, {}) {
+    return virtual_list(
+            .count = ecs_query_count(entities_query),
+            .item_extent = 44,
+            .key = entity_key,
+            .render_item = render_entity,
+            .data = (void *)(uintptr_t)entities_query,
+            .overscan = 2,
+            .width = percent(100),
+            .height = percent(100)
+    );
 }
 
 component(app, {}) {
     return node(
-        text_color(quartz_primary_text),
-        children(node(
-            width(px(230)),
-            height(percent(100)),
-            background(quartz_background),
-            children(tabs_root(
-                "entities",
+        color(quartz_primary_text),
+        width(px(250)),
+        background(quartz_background),
+        children(tabs_root(
+                .default_selected = "entities",
                 children(
                     tabs_list(children(
                         tabs_trigger("entities"),
                         tabs_trigger("systems"),
                         tabs_trigger("components")
                     )),
-                    tabs_content("entities", children(entity_list())),
+                    tabs_content("entities", children(ui(entity_list))),
                     tabs_content("systems", children(text("Systems"))),
                     tabs_content("components", children(text("Components")))
                 )
-            ))
         ))
     );
 }
@@ -63,6 +73,8 @@ component(app, {}) {
 int main() {
     ecs_init();
     ECS_MODULE_IMPORT(siengine, {});
+
+    entities_query = ecs_query({});
 
     ecs_entity_t window = ecs_new();
     ecs_set(window, Name, { "Window" });
@@ -111,6 +123,10 @@ int main() {
     ecs_set(cube3, SIRotation3d, { -0.3f, -0.4f, 0.1f });
     ecs_set(cube3, SIScale3d, { 1.0f, 0.7f, 1.2f });
     ecs_set(cube3, SIColor, { 0.25f, 0.9f, 0.35f, 1.0f });
+
+    for (int i = 0; i < 100; i++) {
+        ecs_new();
+    }
 
     ecs_system(
         {
