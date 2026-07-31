@@ -8,9 +8,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-ECS_RESOURCE_DECLARE(SIEngineCtx, { SDL_GPUDevice *primary_gpu; });
-
-ECS_COMPONENT_DECLARE(SIWindowHandle, { ptr handle; });
+ECS_RESOURCE_DECLARE(SIEngineCtx, {
+    SDL_GPUDevice *primary_gpu;
+    SDL_Window *window;
+});
 
 ECS_MODULE_DECLARE(sitransform, {});
 
@@ -19,11 +20,10 @@ void sirender_register();
 void sirender_shutdown();
 void siui_register();
 void siui_shutdown();
-void siui_attach_window(ecs_entity_t entity);
-void siui_window_destroying(ecs_entity_t entity);
+void siwindow_shutdown();
+void siui_attach_window();
 bool siui_handle_event(const SDL_Event *event);
-bool siui_render_window(
-    ecs_entity_t entity,
+bool siui_render(
     SDL_GPUCommandBuffer *command,
     SDL_GPUTexture *texture,
     uint32_t pixel_width,

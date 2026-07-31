@@ -18,11 +18,10 @@
 #define EXAMPLE_BAKE_CONFIG_H
 
 /* Headers of public dependencies */
-#include <siengine.h>
 #include <siecs.h>
+#include <siengine.h>
 #include <siui.h>
-#include <siui_sdl_gpu.h>
 #include <siui_quartz.h>
+#include <siui_sdl_gpu.h>
 
 #endif
-

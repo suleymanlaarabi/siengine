@@ -58,10 +58,9 @@ void sirender_register() {
     );
     ecs_system(
         {
-            .name = "DrawWindows",
-            .query.terms = { ecs_in(SIWindowHandle) },
+            .name = "DrawWindow",
             .phase = EcsOnRender,
-            .callback = sirender_draw_windows,
+            .callback = sirender_draw_window,
         }
     );
     ecs_system(

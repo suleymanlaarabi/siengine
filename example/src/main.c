@@ -76,10 +76,7 @@ int main() {
 
     entities_query = ecs_query({});
 
-    ecs_entity_t window = ecs_new();
-    ecs_set(window, Name, { "Window" });
-    ecs_set(
-        window,
+    ecs_set_resource(
         SIWindow,
         {
             .title = "siengine cubes",
@@ -89,7 +86,7 @@ int main() {
             .vsync = true,
         }
     );
-    ecs_set(window, SIUIRoot, { .render = app_render });
+    ecs_set_resource(SIUIRoot, { .render = app_render });
 
     ecs_entity_t camera = ecs_new();
     ecs_set(camera, Name, { "Camera" });

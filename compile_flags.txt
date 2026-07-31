@@ -13,7 +13,7 @@
 -fstack-protector-all
 -DBAKE_PROJECT_ID="siengine"
 -Dsiengine_EXPORTS
--I/home/suleyman/projects/siengine/src
--I/home/suleyman/projects/siengine/include
+-I./src
+-I./include
 -I
 /home/suleyman/bake/include

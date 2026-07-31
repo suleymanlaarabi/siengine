@@ -13,6 +13,7 @@ static void on_engine_remove(const void *ptr) {
     SIEngineCtx *ctx = (SIEngineCtx *)ptr;
     siui_shutdown();
     sirender_shutdown();
+    siwindow_shutdown();
     SDL_DestroyGPUDevice(ctx->primary_gpu);
     SDL_QuitSubSystem(SDL_INIT_VIDEO);
 }

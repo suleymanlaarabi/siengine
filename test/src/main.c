@@ -20,6 +20,10 @@ void component_camera_adds_position_and_rotation(void);
 void math_model_applies_translation_scale(void);
 void math_perspective_has_expected_terms(void);
 
+// Testsuite 'ui'
+void ui_root_can_be_set_after_window(void);
+void ui_root_can_be_set_before_window(void);
+
 bake_test_case component_testcases[] = {
     {
         "cube_query_matches_transform_and_color",
@@ -58,6 +62,17 @@ bake_test_case math_testcases[] = {
     }
 };
 
+bake_test_case ui_testcases[] = {
+    {
+        "root_can_be_set_after_window",
+        ui_root_can_be_set_after_window
+    },
+    {
+        "root_can_be_set_before_window",
+        ui_root_can_be_set_before_window
+    }
+};
+
 
 static bake_test_suite suites[] = {
     {
@@ -73,9 +88,16 @@ static bake_test_suite suites[] = {
         NULL,
         2,
         math_testcases
+    },
+    {
+        "ui",
+        NULL,
+        NULL,
+        2,
+        ui_testcases
     }
 };
 
 int main(int argc, char *argv[]) {
-    return bake_test_run("siengine.test", argc, argv, suites, 2);
+    return bake_test_run("siengine.test", argc, argv, suites, 3);
 }

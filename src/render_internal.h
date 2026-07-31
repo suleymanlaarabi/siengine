@@ -27,7 +27,6 @@ typedef struct {
 } SIRenderView;
 
 typedef struct {
-    SDL_Window *window;
     SDL_GPUTexture *texture;
     uint32_t width;
     uint32_t height;
@@ -56,8 +55,7 @@ typedef struct {
 } SICubeRenderState;
 
 typedef struct {
-    SIDepthTarget depth_targets[8];
-    uint32_t depth_target_count;
+    SIDepthTarget depth_target;
 } SIWindowRenderState;
 
 ECS_RESOURCE_DECLARE(SIRenderState, {
@@ -71,13 +69,13 @@ void sirender_end_frame(ecs_iter_t *it);
 void sirender_extract_views(ecs_iter_t *it);
 void sirender_extract_cube_instances(ecs_iter_t *it);
 void sirender_upload_cube_instances(ecs_iter_t *it);
-void sirender_draw_windows(ecs_iter_t *it);
+void sirender_draw_window(ecs_iter_t *it);
 
 void sicube_ensure_pipeline(SDL_GPUTextureFormat color_format);
 void sicube_draw_instances(SDL_GPURenderPass *pass, SIMat4 view_projection);
 void sicube_render_state_shutdown();
 
-SDL_GPUTexture *siwindow_ensure_depth_target(SDL_Window *window, uint32_t width, uint32_t height);
+SDL_GPUTexture *siwindow_ensure_depth_target(uint32_t width, uint32_t height);
 void siwindow_render_state_shutdown();
 
 void sirender_frame_shutdown();
