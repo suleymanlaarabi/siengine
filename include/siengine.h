@@ -23,31 +23,28 @@ ECS_RESOURCE_DECLARE(SIWindow, {
 
 ECS_RESOURCE_DECLARE(SIUIRoot, { sicomponent_fn_t render; });
 
-// Transform
-ECS_COMPONENT_DECLARE(SIPosition3d, { float x, y, z; });
-ECS_COMPONENT_DECLARE(SIRotation3d, { float x, y, z; }); // radians
-ECS_COMPONENT_DECLARE(SIScale3d, { float x, y, z; });
-
-// Rendering
-ECS_COMPONENT_DECLARE(SICube, {});
-ECS_COMPONENT_DECLARE(SIColor, { float r, g, b, a; });
-
-// Camera
-ECS_COMPONENT_DECLARE(SICamera3d, {
-    float fov_y;
-    float near_clip;
-    float far_clip;
+// Scene 2D
+ECS_COMPONENT_DECLARE(SITransform2D, {
+    float x, y;
+    float rotation;
+    float scale_x, scale_y;
+});
+ECS_COMPONENT_DECLARE(SIWorldTransform2D, {
+    float x, y;
+    float rotation;
+    float scale_x, scale_y;
+});
+ECS_COMPONENT_DECLARE(SICamera2D, {
+    float zoom;
+    float viewport_width;
+    float viewport_height;
 });
 ECS_COMPONENT_DECLARE(SIActiveCamera, {});
-
-typedef struct {
-    float m[16];
-} SIMat4;
-
-SIMat4 si_mat4_model(SIPosition3d position, SIRotation3d rotation, SIScale3d scale);
-SIMat4 si_mat4_perspective(float fov_y, float aspect, float near_clip, float far_clip);
-SIMat4 si_mat4_view(SIPosition3d position, SIRotation3d rotation);
-SIMat4 si_mat4_mul(SIMat4 lhs, SIMat4 rhs);
+ECS_COMPONENT_DECLARE(SIRenderOrder, {
+    uint16_t layer;
+    int32_t order;
+});
+ECS_COMPONENT_DECLARE(SIColor, { float r, g, b, a; });
 
 #ifdef __cplusplus
 }

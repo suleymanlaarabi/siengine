@@ -21,7 +21,7 @@ static void on_engine_remove(const void *ptr) {
 ECS_RESOURCE_DEFINE(SIEngineCtx, .on_remove = on_engine_remove);
 
 void siengine_import(const siengine_props_t *) {
-    ECS_MODULE_IMPORT(sitransform, {});
+    ECS_MODULE_IMPORT(siscene2d, {});
     SDL_SetHintWithPriority(SDL_HINT_VIDEO_DRIVER, "wayland,x11", SDL_HINT_OVERRIDE);
     SDL_Init(SDL_INIT_VIDEO);
     fprintf(stderr, "siengine: SDL video driver: %s\n", SDL_GetCurrentVideoDriver());

@@ -13,7 +13,7 @@ ECS_RESOURCE_DECLARE(SIEngineCtx, {
     SDL_Window *window;
 });
 
-ECS_MODULE_DECLARE(sitransform, {});
+ECS_MODULE_DECLARE(siscene2d, {});
 
 void siwindow_register();
 void sirender_register();
