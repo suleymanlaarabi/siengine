@@ -5,13 +5,11 @@
     "author": "Suleyman Laarabi",
     "description": "siecs based game engine",
     "clangd": true,
-    "use": ["siecs", "siui", "siui.sdl_gpu", "siui.quartz"]
+    "use": ["siecs"]
   },
   "bundle": {
     "repositories": {
-      "siecs": "https://github.com/suleymanlaarabi/siecs",
-      "siui": "https://github.com/suleymanlaarabi/siui",
-      "siui.sdl_gpu": "https://github.com/suleymanlaarabi/siui_sdl_gpu"
+      "siecs": "https://github.com/suleymanlaarabi/siecs"
     }
   },
   "lang.c": {

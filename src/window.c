@@ -5,17 +5,10 @@
 #include <siengine.h>
 #include <stdint.h>
 
-static void configure_swapchain(
-    SIEngineCtx *ctx,
-    SDL_Window *window,
-    const SIWindow *window_desc
-) {
+static void configure_swapchain(SIEngineCtx *ctx, SDL_Window *window, const SIWindow *window_desc) {
     SDL_GPUPresentMode present_mode = SDL_GPU_PRESENTMODE_VSYNC;
-    if (window_desc->vsync && SDL_WindowSupportsGPUPresentMode(
-                                  ctx->primary_gpu,
-                                  window,
-                                  SDL_GPU_PRESENTMODE_MAILBOX
-                              )) {
+    if (window_desc->vsync &&
+        SDL_WindowSupportsGPUPresentMode(ctx->primary_gpu, window, SDL_GPU_PRESENTMODE_MAILBOX)) {
         present_mode = SDL_GPU_PRESENTMODE_MAILBOX;
     } else if (!window_desc->vsync) {
         if (SDL_WindowSupportsGPUPresentMode(
@@ -25,11 +18,7 @@ static void configure_swapchain(
             )) {
             present_mode = SDL_GPU_PRESENTMODE_IMMEDIATE;
         } else if (
-            SDL_WindowSupportsGPUPresentMode(
-                ctx->primary_gpu,
-                window,
-                SDL_GPU_PRESENTMODE_MAILBOX
-            )
+            SDL_WindowSupportsGPUPresentMode(ctx->primary_gpu, window, SDL_GPU_PRESENTMODE_MAILBOX)
         ) {
             present_mode = SDL_GPU_PRESENTMODE_MAILBOX;
         }
@@ -77,7 +66,6 @@ static void EnsureWindow(ecs_iter_t *it) {
     SDL_ClaimWindowForGPUDevice(ctx->primary_gpu, ctx->window);
 
     configure_swapchain(ctx, ctx->window, window_desc);
-    siui_attach_window();
 }
 
 static void PollWindowEvents(ecs_iter_t *it) {
@@ -88,8 +76,6 @@ static void PollWindowEvents(ecs_iter_t *it) {
             ecs_quit();
             return;
         }
-
-        siui_handle_event(&e);
     }
 }
 

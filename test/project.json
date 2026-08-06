@@ -17,13 +17,6 @@
           "child_of_keeps_native_parent_relation",
           "render_order_is_component_data"
         ]
-      },
-      {
-        "id": "ui",
-        "testcases": [
-          "root_can_be_set_after_window",
-          "root_can_be_set_before_window"
-        ]
       }
     ]
   },

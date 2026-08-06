@@ -18,18 +18,6 @@ ECS_MODULE_DECLARE(siscene2d, {});
 void siwindow_register();
 void sirender_register();
 void sirender_shutdown();
-void siui_register();
-void siui_shutdown();
 void siwindow_shutdown();
-void siui_attach_window();
-bool siui_handle_event(const SDL_Event *event);
-bool siui_render(
-    SDL_GPUCommandBuffer *command,
-    SDL_GPUTexture *texture,
-    uint32_t pixel_width,
-    uint32_t pixel_height,
-    SDL_FColor clear_color,
-    bool clear_target
-);
 
 #endif

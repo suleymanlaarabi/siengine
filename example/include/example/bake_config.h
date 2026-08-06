@@ -20,8 +20,5 @@
 /* Headers of public dependencies */
 #include <siecs.h>
 #include <siengine.h>
-#include <siui.h>
-#include <siui_quartz.h>
-#include <siui_sdl_gpu.h>
 
 #endif

@@ -40,16 +40,4 @@ void sirender_draw_window(ecs_iter_t *it) {
         return;
     }
     SDL_EndGPURenderPass(pass);
-
-    if (!siui_render(
-            frame->cmd,
-            swapchain_texture,
-            pixel_width,
-            pixel_height,
-            (SDL_FColor){ 0.05f, 0.05f, 0.08f, 1.0f },
-            false
-        )) {
-        SDL_CancelGPUCommandBuffer(frame->cmd);
-        frame->cmd = NULL;
-    }
 }

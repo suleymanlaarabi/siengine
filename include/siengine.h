@@ -4,7 +4,6 @@
 /* This generated file contains includes for project dependencies */
 #include "siecs.h"
 #include "siengine/bake_config.h"
-#include "siui.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,8 +19,6 @@ ECS_RESOURCE_DECLARE(SIWindow, {
     bool resizable;
     bool vsync;
 });
-
-ECS_RESOURCE_DECLARE(SIUIRoot, { sicomponent_fn_t render; });
 
 // Scene 2D
 ECS_COMPONENT_DECLARE(SITransform2D, {
