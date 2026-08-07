@@ -3,7 +3,6 @@
 #include <example.h>
 #include <stdint.h>
 #include <string.h>
-#include <unistd.h>
 
 int main(void) {
     ecs_with_features({ .target_fps = 60 });
@@ -21,9 +20,8 @@ int main(void) {
         }
     );
 
-    const char *hero_path =
-        access("assets/hero.png", R_OK) == 0 ? "assets/hero.png" : "../assets/hero.png";
-    SITextureHandle texture = siengine_load_texture(hero_path, SI_FILTER_NEAREST);
+    ecs_set_resource(SIAssetRoot, { .path = "../../../../assets" });
+    SITextureHandle texture = siengine_load_texture("hero.png", SI_FILTER_NEAREST);
 
     ecs_entity_t camera = ecs_new();
     ecs_set(
@@ -47,6 +45,7 @@ int main(void) {
 
     ecs_entity_t root = ecs_new();
     ecs_set(root, Name, { strdup("Sprites") });
+    ecs_set(root, SITransform2D, { .scale_x = 1, .scale_y = 1 });
 
     for (int i = 0; i < 120; i++) {
         ecs_entity_t sprite = ecs_new();

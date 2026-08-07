@@ -19,6 +19,9 @@ ECS_RESOURCE_DECLARE(SIWindow, {
     bool resizable;
     bool vsync;
 });
+ECS_RESOURCE_DECLARE(SIAssetRoot, {
+    char path[512];
+});
 
 typedef uint64_t SITextureHandle;
 

@@ -1,28 +1,8 @@
 #include "render_internal.h"
+#include "render_shaders.h"
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-static uint8_t *load_shader(const char *path, size_t *size) {
-    FILE *file = fopen(path, "rb");
-    if (!file) {
-        char parent_path[256];
-        snprintf(parent_path, sizeof(parent_path), "../%s", path);
-        file = fopen(parent_path, "rb");
-        if (!file)
-            return NULL;
-    }
-
-    fseek(file, 0, SEEK_END);
-    long length = ftell(file);
-    fseek(file, 0, SEEK_SET);
-    uint8_t *data = malloc((size_t)length);
-    fread(data, 1, (size_t)length, file);
-    fclose(file);
-    *size = (size_t)length;
-    return data;
-}
 
 static SDL_GPUColorTargetBlendState blend_state(SIBlendModeValue blend) {
     SDL_GPUColorTargetBlendState state = {
@@ -113,21 +93,11 @@ ensure_gpu_resources(SIEngineCtx *engine, SIRenderState *render, SDL_GPUTextureF
         }
 
         if (!render->vertex_shader) {
-            size_t vertex_size = 0;
-            size_t fragment_size = 0;
-            uint8_t *vertex_code = load_shader("shaders/sprite.vert.spv", &vertex_size);
-            uint8_t *fragment_code = load_shader("shaders/sprite.frag.spv", &fragment_size);
-            if (!vertex_code || !fragment_code) {
-                free(vertex_code);
-                free(fragment_code);
-                return;
-            }
-
             render->vertex_shader = SDL_CreateGPUShader(
                 engine->primary_gpu,
                 &(SDL_GPUShaderCreateInfo){
-                    .code_size = vertex_size,
-                    .code = vertex_code,
+                    .code_size = si_sprite_vertex_shader_size,
+                    .code = si_sprite_vertex_shader,
                     .entrypoint = "main",
                     .format = SDL_GPU_SHADERFORMAT_SPIRV,
                     .stage = SDL_GPU_SHADERSTAGE_VERTEX,
@@ -136,16 +106,14 @@ ensure_gpu_resources(SIEngineCtx *engine, SIRenderState *render, SDL_GPUTextureF
             render->fragment_shader = SDL_CreateGPUShader(
                 engine->primary_gpu,
                 &(SDL_GPUShaderCreateInfo){
-                    .code_size = fragment_size,
-                    .code = fragment_code,
+                    .code_size = si_sprite_fragment_shader_size,
+                    .code = si_sprite_fragment_shader,
                     .entrypoint = "main",
                     .format = SDL_GPU_SHADERFORMAT_SPIRV,
                     .stage = SDL_GPU_SHADERSTAGE_FRAGMENT,
                     .num_samplers = 1,
                 }
             );
-            free(vertex_code);
-            free(fragment_code);
         }
 
         if (render->vertex_shader && render->fragment_shader) {

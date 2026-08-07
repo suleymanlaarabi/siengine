@@ -24,6 +24,7 @@
       {
         "id": "assets",
         "testcases": [
+          "texture_path_uses_asset_root",
           "animation_updates_sprite_frame"
         ]
       }

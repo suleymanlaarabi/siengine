@@ -69,9 +69,9 @@ static ecs_entity_t create_layer(const char *name) {
 }
 
 static void update_world_transforms_w_parent(ecs_iter_t *it) {
-    SITransform2D *local = ecs_field(it, 0);
-    SIWorldTransform2D *world = ecs_field(it, 1);
-    const ecs_relation_target_t *parents = ecs_targets(it, ChildOf);
+    const SITransform2D *restrict local = ecs_field(it, 0);
+    SIWorldTransform2D *restrict world = ecs_field(it, 1);
+    const ecs_relation_target_t *restrict parents = ecs_targets(it, ChildOf);
 
     for (uint32_t i = 0; i < it->count; i++) {
         SIWorldTransform2D *parent_world = ecs_try_get(parents[i].entity, SIWorldTransform2D);
@@ -101,18 +101,10 @@ static void update_world_transforms_w_parent(ecs_iter_t *it) {
 }
 
 static void update_world_transforms_no_parent(ecs_iter_t *it) {
-    SITransform2D *local = ecs_field(it, 0);
-    SIWorldTransform2D *world = ecs_field(it, 1);
+    SITransform2D *restrict local = ecs_field(it, 0);
+    SIWorldTransform2D *restrict world = ecs_field(it, 1);
 
-    for (uint32_t i = 0; i < it->count; i++) {
-        world[i] = (SIWorldTransform2D){
-            .x = local[i].x,
-            .y = local[i].y,
-            .rotation = local[i].rotation,
-            .scale_x = local[i].scale_x,
-            .scale_y = local[i].scale_y,
-        };
-    }
+    memcpy(world, local, sizeof(SITransform2D));
 }
 
 static void update_animations(ecs_iter_t *it) {
@@ -177,23 +169,7 @@ void siscene2d_import(const siscene2d_props_t *props) {
     ecs_with(ecs_id(SIAnimation), ecs_id(SISprite));
     ecs_with(ecs_id(SIAnimation), ecs_id(SIAnimationTimer));
 
-    ecs_system({
-        .name = "UpdateWorldTransformsWithParent",
-        .phase = EcsOnUpdate,
-        .callback = update_world_transforms_w_parent,
-        .query = {
-            .terms = {
-                ecs_in(SITransform2D),
-                ecs_out(SIWorldTransform2D)
-            },
-            .relations = {
-                ecs_rel(ChildOf),
-            },
-            .order_by = ecs_order_by_depth(ChildOf),
-        },
-    });
-
-    ecs_system({
+    ecs_system_id_t update_no_parent = ecs_system({
         .name = "UpdateWorldTransformsWithoutParent",
         .phase = EcsOnUpdate,
         .callback = update_world_transforms_no_parent,
@@ -205,6 +181,23 @@ void siscene2d_import(const siscene2d_props_t *props) {
             .relations = {
                 ecs_not_rel(ChildOf),
             },
+        },
+    });
+
+    ecs_system({
+        .name = "UpdateWorldTransformsWithParent",
+        .phase = EcsOnUpdate,
+        .callback = update_world_transforms_w_parent,
+        .after = { update_no_parent },
+        .query = {
+            .terms = {
+                ecs_in(SITransform2D),
+                ecs_out(SIWorldTransform2D)
+            },
+            .relations = {
+                ecs_rel(ChildOf),
+            },
+            .order_by = ecs_order_by_depth(ChildOf),
         },
     });
 

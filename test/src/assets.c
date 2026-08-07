@@ -1,5 +1,18 @@
 #include "test.h"
 
+void assets_texture_path_uses_asset_root(void) {
+    ecs_init();
+    ECS_MODULE_IMPORT(siengine, {});
+
+    ecs_set_resource(SIAssetRoot, { .path = "../../../assets" });
+    SITextureHandle texture = siengine_load_texture("hero.png", SI_FILTER_NEAREST);
+
+    test_true(texture != SI_INVALID_HANDLE);
+    siengine_release_texture(texture);
+
+    ecs_fini();
+}
+
 void assets_animation_updates_sprite_frame(void) {
     ecs_init();
     ECS_MODULE_IMPORT(siengine, {});
