@@ -1,0 +1,27 @@
+{
+  "id": "siengine.test.cpp",
+  "type": "application",
+  "value": {
+    "public": false,
+    "clangd": true,
+    "language": "cpp",
+    "use": ["siengine", "siecs"]
+  },
+  "test": {
+    "testsuites": [
+      {
+        "id": "defaults",
+        "testcases": [
+          "component_defaults",
+          "camera_defaults",
+          "sprite_default_layer",
+          "sprite_explicit_layer",
+          "asset_root_default"
+        ]
+      }
+    ]
+  },
+  "lang.cpp": {
+    "cpp-standard": "c++20"
+  }
+}

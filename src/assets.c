@@ -1,7 +1,6 @@
 #include "assets_internal.h"
 #include <SDL3_image/SDL_image.h>
 #include <SDL3/SDL_filesystem.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -182,13 +181,7 @@ void siengine_release_texture(SITextureHandle handle) {
 
 void siassets_register(void) {
     ECS_RESOURCE_REGISTER(SIAssetRoot);
-    ecs_set_resource(SIAssetRoot, {});
-    snprintf(
-        ecs_get_resource(SIAssetRoot)->path,
-        sizeof(ecs_get_resource(SIAssetRoot)->path),
-        "%s",
-        SDL_GetBasePath()
-    );
+    ecs_set_resource(SIAssetRoot, { .path = "./assets" });
 
     ECS_RESOURCE_REGISTER(SIAssetStore);
     ecs_set_resource(SIAssetStore, {});

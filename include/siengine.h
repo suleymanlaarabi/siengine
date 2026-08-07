@@ -6,22 +6,31 @@
 #include "siengine/bake_config.h"
 
 #ifdef __cplusplus
+#include <cstring>
 extern "C" {
 #endif
 
 #define DEG2RAD(deg) ((deg) * 0.01745329251994329576923690768489)
 
 ECS_MODULE_DECLARE(siengine, {});
-ECS_RESOURCE_DECLARE(SIWindow, {
-    char title[128];
-    uint32_t width;
-    uint32_t height;
-    bool resizable;
-    bool vsync;
-});
-ECS_RESOURCE_DECLARE(SIAssetRoot, {
-    char path[512];
-});
+
+ECS_RESOURCE_DECLARE_CPP(
+    SIWindow,
+    ECS_CPP_FIELDS(char title[128]; uint32_t width; uint32_t height; bool resizable; bool vsync;),
+    ECS_CPP_METHODS(
+        SIWindow() : title{"Siengine"}, width(1280), height(720), resizable(true), vsync(true) {}
+        SIWindow(const char *window_title) : SIWindow() { std::strcpy(title, window_title); }
+    )
+);
+
+ECS_RESOURCE_DECLARE_CPP(
+    SIAssetRoot,
+    ECS_CPP_FIELDS(const char *path;),
+    ECS_CPP_METHODS(
+        SIAssetRoot() : path{"./assets"} {}
+        SIAssetRoot(const char *path) : path{path} {}
+    )
+);
 
 typedef uint64_t SITextureHandle;
 
@@ -51,46 +60,69 @@ extern ecs_entity_t SILayerOverlay;
 extern ecs_entity_t SILayerDebug;
 extern ecs_entity_t SILayerUI;
 
-// Scene 2D
-ECS_COMPONENT_DECLARE(SITransform2D, {
-    float x, y;
-    float rotation;
-    float scale_x, scale_y;
-});
-ECS_COMPONENT_DECLARE(SIWorldTransform2D, {
-    float x, y;
-    float rotation;
-    float scale_x, scale_y;
-});
-ECS_COMPONENT_DECLARE(SICamera2D, {
-    float zoom;
-    float viewport_width;
-    float viewport_height;
-});
+ECS_COMPONENT_DECLARE_CPP(
+    SITransform2D,
+    ECS_CPP_FIELDS(float x; float y; float rotation; float scale_x; float scale_y;),
+    ECS_CPP_METHODS(SITransform2D() : scale_x(1), scale_y(1){})
+);
+
+ECS_COMPONENT_DECLARE_CPP(
+    SIWorldTransform2D,
+    ECS_CPP_FIELDS(float x; float y; float rotation; float scale_x; float scale_y;),
+    ECS_CPP_METHODS(SIWorldTransform2D() : scale_x(1), scale_y(1) {})
+);
+ECS_COMPONENT_DECLARE_CPP(
+    SICamera2D,
+    ECS_CPP_FIELDS(float zoom; float viewport_width; float viewport_height;),
+    ECS_CPP_METHODS(SICamera2D() : zoom(1), viewport_width(320), viewport_height(180) {})
+);
+ECS_COMPONENT_DECLARE_CPP(
+    SICameraViewport,
+    ECS_CPP_FIELDS(float x; float y; float width; float height;),
+    ECS_CPP_METHODS(SICameraViewport() : width(1), height(1) {})
+);
 ECS_COMPONENT_DECLARE(SIActiveCamera, {});
-ECS_COMPONENT_DECLARE(SICameraViewport, {
-    float x, y;
-    float width, height;
-});
 ECS_COMPONENT_DECLARE(SIVirtualResolution, {
-    uint32_t width, height;
+    uint32_t width;
+    uint32_t height;
     bool enabled;
     bool pixel_perfect;
 });
-ECS_COMPONENT_DECLARE(SIColor, { float r, g, b, a; });
-ECS_COMPONENT_DECLARE(SISprite, {
-    uint64_t texture;
-    uint32_t frame_index;
-});
+ECS_COMPONENT_DECLARE_CPP(
+    SIColor,
+    ECS_CPP_FIELDS(float r; float g; float b; float a;),
+    ECS_CPP_METHODS(SIColor() : r(1), g(1), b(1), a(1) {})
+);
+ECS_COMPONENT_DECLARE_CPP(
+    SISprite,
+    ECS_CPP_FIELDS(uint64_t texture; uint32_t frame_index;),
+    ECS_CPP_METHODS(
+        SISprite() : texture(SI_INVALID_HANDLE), frame_index(0) {}
+        SISprite(uint64_t sprite_texture) : texture(sprite_texture), frame_index(0) {}
+    )
+);
 ECS_COMPONENT_DECLARE(SISpriteSheet, {
     uint32_t columns, rows;
     uint32_t frame_width, frame_height;
     uint32_t margin_x, margin_y;
     uint32_t spacing_x, spacing_y;
 });
-ECS_COMPONENT_DECLARE(SISpriteFlip, { bool x, y; });
-ECS_COMPONENT_DECLARE(SIPivot, { float x, y; });
-ECS_COMPONENT_DECLARE(SIBlendMode, { uint8_t value; });
+ECS_COMPONENT_DECLARE_CPP(
+    SISpriteFlip,
+    ECS_CPP_FIELDS(bool x; bool y;),
+    ECS_CPP_METHODS(SISpriteFlip() : x(false), y(false) {})
+);
+ECS_COMPONENT_DECLARE_CPP(
+    SIPivot,
+    ECS_CPP_FIELDS(float x; float y;),
+    ECS_CPP_METHODS(SIPivot() : x(0.5f), y(0.5f) {})
+);
+
+ECS_COMPONENT_DECLARE_CPP(
+    SIBlendMode,
+    ECS_CPP_FIELDS(uint8_t value;),
+    ECS_CPP_METHODS(SIBlendMode() : value(SI_BLEND_NORMAL) {})
+);
 ECS_COMPONENT_DECLARE(SIAnimation, {
     uint32_t start_index;
     uint32_t end_index;

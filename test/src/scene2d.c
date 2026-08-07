@@ -68,6 +68,7 @@ void scene2d_query_matches_active_cameras(void) {
 
     ecs_entity_t inactive = ecs_new();
     ecs_add(inactive, SICamera2D);
+    ecs_remove(inactive, SIActiveCamera);
 
     ecs_query_id_t query = ecs_query(
         { .terms = {

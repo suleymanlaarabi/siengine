@@ -1,0 +1,14 @@
+{
+    "id": "example.cpp",
+    "type": "application",
+    "value": {
+        "author": "Jane Doe",
+        "description": "Room sharing for influencers",
+        "use": ["siengine", "siecs", "siecs_rest"],
+        "clangd": true,
+        "language": "cpp"
+    },
+    "lang.cpp": {
+      "cpp-standard": "c++20"
+    }
+}
