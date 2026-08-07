@@ -11,6 +11,7 @@ ECS_MODULE_DEFINE(siengine);
 
 static void on_engine_remove(const void *ptr) {
     SIEngineCtx *ctx = (SIEngineCtx *)ptr;
+    siassets_shutdown();
     sirender_shutdown();
     siwindow_shutdown();
     SDL_DestroyGPUDevice(ctx->primary_gpu);
@@ -36,5 +37,6 @@ void siengine_import(const siengine_props_t *) {
     ecs_set_resource(SIEngineCtx, { .primary_gpu = gpu });
 
     siwindow_register();
+    siassets_register();
     sirender_register();
 }

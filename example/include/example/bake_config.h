@@ -18,7 +18,9 @@
 #define EXAMPLE_BAKE_CONFIG_H
 
 /* Headers of public dependencies */
-#include <siecs.h>
 #include <siengine.h>
+#include <siecs.h>
+#include <siecs_rest.h>
 
 #endif
+

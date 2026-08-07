@@ -15,7 +15,16 @@
           "camera_requires_transform",
           "query_matches_active_cameras",
           "child_of_keeps_native_parent_relation",
-          "render_order_is_component_data"
+          "world_transform_follows_parent",
+          "default_layers_are_ordered",
+          "sprite_requires_transform",
+          "sprite_sheet_describes_grid"
+        ]
+      },
+      {
+        "id": "assets",
+        "testcases": [
+          "animation_updates_sprite_frame"
         ]
       }
     ]

@@ -16,6 +16,8 @@ ECS_RESOURCE_DECLARE(SIEngineCtx, {
 ECS_MODULE_DECLARE(siscene2d, {});
 
 void siwindow_register();
+void siassets_register();
+void siassets_shutdown();
 void sirender_register();
 void sirender_shutdown();
 void siwindow_shutdown();
