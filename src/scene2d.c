@@ -59,9 +59,12 @@ ECS_COMPONENT_DEFINE(SIBlendMode);
 ECS_COMPONENT_DEFINE(SIAnimation, .on_add = animation_on_add, .on_set = animation_on_set);
 ECS_COMPONENT_DEFINE(SIAnimationTimer);
 
+ecs_entity_t Layers;
+
 static ecs_entity_t create_layer(const char *name) {
     ecs_entity_t layer = ecs_new_no_reuse();
     ecs_set(layer, Name, { strdup(name) });
+    ecs_relate(layer, ChildOf, Layers);
     return layer;
 }
 
@@ -154,6 +157,8 @@ void siscene2d_import(const siscene2d_props_t *props) {
     ECS_COMPONENT_REGISTER(SIAnimation);
     ECS_COMPONENT_REGISTER(SIAnimationTimer);
 
+    Layers = ecs_new();
+    ecs_set(Layers, Name, { strdup("Layers") });
     SILayerBackground = create_layer("Background");
     SILayerBackgroundDetail = create_layer("BackgroundDetail");
     SILayerGround = create_layer("Ground");

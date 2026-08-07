@@ -31,7 +31,7 @@ int main(void) {
         SICamera2D,
         { .zoom = 1.0f, .viewport_width = 320.0f, .viewport_height = 180.0f }
     );
-
+    ecs_set(camera, Name, { strdup("Camera") });
     ecs_add(camera, SIActiveCamera);
     ecs_set(camera, SICameraViewport, { .width = 1.0f, .height = 1.0f });
     ecs_set(
