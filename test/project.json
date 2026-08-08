@@ -20,6 +20,7 @@
           "world_transform_follows_parent",
           "default_layers_are_ordered",
           "sprite_requires_transform",
+          "shapes_require_transform_and_default_layer",
           "sprite_sheet_describes_grid"
         ]
       },
@@ -35,7 +36,9 @@
         "testcases": [
           "sprite_defaults_are_components",
           "extracts_once_for_multiple_views",
-          "extracts_sheet_region_and_layer_order"
+          "extracts_sheet_region_and_layer_order",
+          "extracts_colored_shapes",
+          "culls_shapes"
         ]
       }
     ]

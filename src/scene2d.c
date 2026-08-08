@@ -5,7 +5,6 @@
 #include <string.h>
 
 ECS_MODULE_DEFINE(siscene2d);
-
 ECS_RELATION_DEFINE(
     Layer,
     {
@@ -24,13 +23,6 @@ ecs_entity_t SILayerOverlay;
 ecs_entity_t SILayerDebug;
 ecs_entity_t SILayerUI;
 
-static void animation_on_add(ecs_entity_t entity, ecs_component_t component, void *value) {
-    (void)component;
-    (void)value;
-    SIAnimationTimer *timer = ecs_get(entity, SIAnimationTimer);
-    *timer = (SIAnimationTimer){ .playing = true };
-}
-
 static void animation_on_set(
     ecs_entity_t entity,
     ecs_component_t component,
@@ -41,67 +33,55 @@ static void animation_on_set(
     (void)current_value;
     const SIAnimation *animation = new_value;
     ecs_get(entity, SISprite)->frame_index = animation->start_index;
-    *ecs_get(entity, SIAnimationTimer) = (SIAnimationTimer){ .playing = true };
 }
 
-static void transform_on_add(ecs_entity_t entity, ecs_component_t component, void *value) {
-    (void)entity;
-    (void)component;
-    SITransform2D *transform = value;
-    *transform = (SITransform2D){ .scale_x = 1.0f, .scale_y = 1.0f };
-}
+ECS_CTOR(SITransform2D, { .scale_x = 1.0f, .scale_y = 1.0f });
+ECS_CTOR(SIWorldTransform2D, { .scale_x = 1.0f, .scale_y = 1.0f });
+ECS_CTOR(SICameraViewport, { .width = 1.0f, .height = 1.0f });
+ECS_CTOR(
+    SICamera2D,
+    {
+        .zoom = 1.0f,
+        .viewport_width = 320.0f,
+        .viewport_height = 180.0f,
+    }
+);
+ECS_CTOR(SIVirtualResolution, { .width = 320, .height = 180, .pixel_perfect = true });
 
-static void world_transform_on_add(ecs_entity_t entity, ecs_component_t component, void *value) {
-    (void)entity;
-    (void)component;
-    SIWorldTransform2D *transform = value;
-    *transform = (SIWorldTransform2D){ .scale_x = 1.0f, .scale_y = 1.0f };
-}
-
-static void camera_viewport_on_add(ecs_entity_t entity, ecs_component_t component, void *value) {
-    (void)entity;
-    (void)component;
-    SICameraViewport *viewport = value;
-    *viewport = (SICameraViewport){ .width = 1.0f, .height = 1.0f };
-}
-
-static void camera_on_add(ecs_entity_t entity, ecs_component_t component, void *value) {
-    (void)entity;
-    (void)component;
-    SICamera2D *camera = value;
-    *camera = (SICamera2D){ .zoom = 1.0f, .viewport_width = 320.0f, .viewport_height = 180.0f };
-}
-
-static void virtual_resolution_on_add(ecs_entity_t entity, ecs_component_t component, void *value) {
-    (void)entity;
-    (void)component;
-    SIVirtualResolution *resolution = value;
-    *resolution = (SIVirtualResolution){ .width = 320, .height = 180, .pixel_perfect = true };
-}
-
-static void sprite_on_add(ecs_entity_t entity, ecs_component_t component, void *value) {
+static void renderable_layer_on_add(ecs_entity_t entity, ecs_component_t component, void *value) {
     (void)component;
     (void)value;
     if (!ecs_has_relation(entity, Layer))
-        ecs_relate(entity, Layer, SILayerActors);
-    *ecs_get(entity, SIColor) = (SIColor){ 1, 1, 1, 1 };
-    *ecs_get(entity, SIPivot) = (SIPivot){ .x = 0.5f, .y = 0.5f };
-    *ecs_get(entity, SIBlendMode) = (SIBlendMode){ .value = SI_BLEND_NORMAL };
+        ecs_relate(entity, Layer, SILayerWorld);
 }
 
-ECS_COMPONENT_DEFINE(SITransform2D, .on_add = transform_on_add);
-ECS_COMPONENT_DEFINE(SIWorldTransform2D, .on_add = world_transform_on_add);
-ECS_COMPONENT_DEFINE(SICamera2D, .on_add = camera_on_add);
-ECS_COMPONENT_DEFINE(SICameraViewport, .on_add = camera_viewport_on_add);
-ECS_COMPONENT_DEFINE(SIVirtualResolution, .on_add = virtual_resolution_on_add);
-ECS_COMPONENT_DEFINE(SIColor);
-ECS_COMPONENT_DEFINE(SISprite, .on_add = sprite_on_add);
+ECS_TAG_DEFINE(SIRenderable, .on_add = renderable_layer_on_add);
+
+ECS_CTOR(SIColor, { 1, 1, 1, 1 });
+ECS_CTOR(SISprite, { .texture = SI_INVALID_HANDLE });
+ECS_CTOR(SICircle, { .radius = 1.0f });
+ECS_CTOR(SIRectangle, { .width = 1.0f, .height = 1.0f });
+ECS_CTOR(SITriangle, { .base = 1.0f, .height = 1.0f });
+ECS_CTOR(SIPivot, { .x = 0.5f, .y = 0.5f });
+ECS_CTOR(SIBlendMode, { .value = SI_BLEND_NORMAL });
+ECS_CTOR(SIAnimationTimer, { .playing = true });
+
+ECS_COMPONENT_DEFINE(SITransform2D, .ops = { .ctor = ecs_ctor_id(SITransform2D) });
+ECS_COMPONENT_DEFINE(SIWorldTransform2D, .ops = { .ctor = ecs_ctor_id(SIWorldTransform2D) });
+ECS_COMPONENT_DEFINE(SICamera2D, .ops = { .ctor = ecs_ctor_id(SICamera2D) });
+ECS_COMPONENT_DEFINE(SICameraViewport, .ops = { .ctor = ecs_ctor_id(SICameraViewport) });
+ECS_COMPONENT_DEFINE(SIVirtualResolution, .ops = { .ctor = ecs_ctor_id(SIVirtualResolution) });
+ECS_COMPONENT_DEFINE(SIColor, .ops = { .ctor = ecs_ctor_id(SIColor) });
+ECS_COMPONENT_DEFINE(SISprite, .ops = { .ctor = ecs_ctor_id(SISprite) });
+ECS_COMPONENT_DEFINE(SICircle, .ops = { .ctor = ecs_ctor_id(SICircle) });
+ECS_COMPONENT_DEFINE(SIRectangle, .ops = { .ctor = ecs_ctor_id(SIRectangle) });
+ECS_COMPONENT_DEFINE(SITriangle, .ops = { .ctor = ecs_ctor_id(SITriangle) });
 ECS_COMPONENT_DEFINE(SISpriteSheet);
 ECS_COMPONENT_DEFINE(SISpriteFlip);
-ECS_COMPONENT_DEFINE(SIPivot);
-ECS_COMPONENT_DEFINE(SIBlendMode);
-ECS_COMPONENT_DEFINE(SIAnimation, .on_add = animation_on_add, .on_set = animation_on_set);
-ECS_COMPONENT_DEFINE(SIAnimationTimer);
+ECS_COMPONENT_DEFINE(SIPivot, .ops = { .ctor = ecs_ctor_id(SIPivot) });
+ECS_COMPONENT_DEFINE(SIBlendMode, .ops = { .ctor = ecs_ctor_id(SIBlendMode) });
+ECS_COMPONENT_DEFINE(SIAnimation, .on_set = animation_on_set);
+ECS_COMPONENT_DEFINE(SIAnimationTimer, .ops = { .ctor = ecs_ctor_id(SIAnimationTimer) });
 
 ecs_entity_t Layers;
 
@@ -178,19 +158,25 @@ static void update_animations(ecs_iter_t *it) {
 
 void siscene2d_import(const siscene2d_props_t *props) {
     ECS_RELATION_REGISTER(Layer);
-    ECS_COMPONENT_REGISTER(SITransform2D);
-    ECS_COMPONENT_REGISTER(SIWorldTransform2D);
-    ECS_COMPONENT_REGISTER(SICamera2D);
-    ECS_COMPONENT_REGISTER(SICameraViewport);
-    ECS_COMPONENT_REGISTER(SIVirtualResolution);
-    ECS_COMPONENT_REGISTER(SIColor);
-    ECS_COMPONENT_REGISTER(SISprite);
-    ECS_COMPONENT_REGISTER(SISpriteSheet);
-    ECS_COMPONENT_REGISTER(SISpriteFlip);
-    ECS_COMPONENT_REGISTER(SIPivot);
-    ECS_COMPONENT_REGISTER(SIBlendMode);
-    ECS_COMPONENT_REGISTER(SIAnimation);
-    ECS_COMPONENT_REGISTER(SIAnimationTimer);
+    ECS_COMPONENT_REGISTER(
+        SIRenderable,
+        SITransform2D,
+        SIWorldTransform2D,
+        SICamera2D,
+        SICameraViewport,
+        SIVirtualResolution,
+        SIColor,
+        SISprite,
+        SICircle,
+        SIRectangle,
+        SITriangle,
+        SISpriteSheet,
+        SISpriteFlip,
+        SIPivot,
+        SIBlendMode,
+        SIAnimation,
+        SIAnimationTimer
+    );
 
     Layers = ecs_new();
     ecs_set(Layers, Name, { strdup("Layers") });
@@ -205,16 +191,13 @@ void siscene2d_import(const siscene2d_props_t *props) {
     SILayerDebug = create_layer("Debug");
     SILayerUI = create_layer("UI");
 
-    ecs_with(ecs_id(SITransform2D), ecs_id(SIWorldTransform2D));
-    ecs_with(ecs_id(SICamera2D), ecs_id(SITransform2D));
-    ecs_with(ecs_id(SICamera2D), ecs_id(SICameraViewport));
-    ecs_with(ecs_id(SISprite), ecs_id(SITransform2D));
-    ecs_with(ecs_id(SISprite), ecs_id(SIColor));
-    ecs_with(ecs_id(SISprite), ecs_id(SISpriteFlip));
-    ecs_with(ecs_id(SISprite), ecs_id(SIPivot));
-    ecs_with(ecs_id(SISprite), ecs_id(SIBlendMode));
-    ecs_with(ecs_id(SIAnimation), ecs_id(SISprite));
-    ecs_with(ecs_id(SIAnimation), ecs_id(SIAnimationTimer));
+    ecs_with(SITransform2D, SIWorldTransform2D);
+    ecs_with(SICamera2D, SITransform2D, SICameraViewport);
+    ecs_with(SISprite, SITransform2D, SIColor, SISpriteFlip, SIPivot, SIBlendMode, SIRenderable);
+    ecs_with(SICircle, SITransform2D, SIColor, SIBlendMode, SIRenderable);
+    ecs_with(SIRectangle, SITransform2D, SIColor, SIBlendMode, SIRenderable);
+    ecs_with(SITriangle, SITransform2D, SIColor, SIBlendMode, SIRenderable);
+    ecs_with(SIAnimation, SISprite, SIAnimationTimer);
 
     ecs_system_id_t update_no_parent = ecs_system({
         .name = "UpdateWorldTransformsWithoutParent",

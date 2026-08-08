@@ -107,6 +107,29 @@ ECS_COMPONENT_DECLARE_CPP(
         SISprite(uint64_t sprite_texture) : texture(sprite_texture), frame_index(0) {}
     )
 );
+ECS_COMPONENT_DECLARE_CPP(
+    SICircle,
+    ECS_CPP_FIELDS(float radius;),
+    ECS_CPP_METHODS(SICircle() : radius(1) {} SICircle(float circle_radius) : radius(circle_radius) {})
+);
+ECS_COMPONENT_DECLARE_CPP(
+    SIRectangle,
+    ECS_CPP_FIELDS(float width; float height;),
+    ECS_CPP_METHODS(
+        SIRectangle() : width(1), height(1) {}
+        SIRectangle(float rectangle_width, float rectangle_height)
+            : width(rectangle_width), height(rectangle_height) {}
+    )
+);
+ECS_COMPONENT_DECLARE_CPP(
+    SITriangle,
+    ECS_CPP_FIELDS(float base; float height;),
+    ECS_CPP_METHODS(
+        SITriangle() : base(1), height(1) {}
+        SITriangle(float triangle_base, float triangle_height)
+            : base(triangle_base), height(triangle_height) {}
+    )
+);
 ECS_COMPONENT_DECLARE(SISpriteSheet, {
     uint32_t columns, rows;
     uint32_t frame_width, frame_height;

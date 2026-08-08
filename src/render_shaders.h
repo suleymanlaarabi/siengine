@@ -8,5 +8,9 @@ extern const uint8_t si_sprite_vertex_shader[];
 extern const unsigned int si_sprite_vertex_shader_size;
 extern const uint8_t si_sprite_fragment_shader[];
 extern const unsigned int si_sprite_fragment_shader_size;
+extern const uint8_t si_shape_fragment_shader[];
+extern const unsigned int si_shape_fragment_shader_size;
+extern const uint8_t si_circle_fragment_shader[];
+extern const unsigned int si_circle_fragment_shader_size;
 
 #endif

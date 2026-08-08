@@ -152,7 +152,7 @@ void scene2d_world_transform_follows_parent(void) {
     ecs_set(child, SITransform2D, { .x = 4.0f, .y = 5.0f, .scale_x = 1.0f, .scale_y = 1.0f });
     ecs_relate(child, ChildOf, parent);
 
-    ecs_run_phase(EcsOnUpdate);
+    ecs_run_phase(EcsPostUpdate);
 
     SIWorldTransform2D *world = ecs_get(child, SIWorldTransform2D);
     test_assert(world->x == 18.0f);
@@ -208,6 +208,33 @@ void scene2d_sprite_requires_transform(void) {
 
     test_true(ecs_has(sprite, SITransform2D));
     test_true(ecs_has(sprite, SIWorldTransform2D));
+
+    ecs_fini();
+}
+
+void scene2d_shapes_require_transform_and_default_layer(void) {
+    ecs_init();
+    register_scene2d();
+
+    ecs_entity_t circle = ecs_new();
+    ecs_add(circle, SICircle);
+    ecs_entity_t rectangle = ecs_new();
+    ecs_add(rectangle, SIRectangle);
+    ecs_entity_t triangle = ecs_new();
+    ecs_add(triangle, SITriangle);
+
+    test_true(ecs_has(circle, SITransform2D));
+    test_true(ecs_has(circle, SIWorldTransform2D));
+    test_true(ecs_has(circle, SIColor));
+    test_true(ecs_has(circle, SIBlendMode));
+    test_assert(ecs_target(circle, Layer) == SILayerWorld);
+    test_assert(ecs_target(rectangle, Layer) == SILayerWorld);
+    test_assert(ecs_target(triangle, Layer) == SILayerWorld);
+    test_assert(ecs_get(circle, SICircle)->radius == 1.0f);
+    test_assert(ecs_get(rectangle, SIRectangle)->width == 1.0f);
+    test_assert(ecs_get(rectangle, SIRectangle)->height == 1.0f);
+    test_assert(ecs_get(triangle, SITriangle)->base == 1.0f);
+    test_assert(ecs_get(triangle, SITriangle)->height == 1.0f);
 
     ecs_fini();
 }

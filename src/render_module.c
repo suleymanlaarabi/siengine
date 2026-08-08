@@ -9,17 +9,25 @@ void sirender_shutdown() {
         return;
 
     ecs_query_fini(render->camera_query);
-    ecs_query_fini(render->sprite_query);
+    ecs_query_fini(render->renderable_query);
     SIEngineCtx *engine = ecs_try_get_resource(SIEngineCtx);
     if (engine && engine->primary_gpu) {
         for (uint32_t i = 0; i < 3; i++) {
-            if (render->pipelines[i])
-                SDL_ReleaseGPUGraphicsPipeline(engine->primary_gpu, render->pipelines[i]);
+            if (render->sprite_pipelines[i])
+                SDL_ReleaseGPUGraphicsPipeline(engine->primary_gpu, render->sprite_pipelines[i]);
+            if (render->shape_pipelines[i])
+                SDL_ReleaseGPUGraphicsPipeline(engine->primary_gpu, render->shape_pipelines[i]);
+            if (render->circle_pipelines[i])
+                SDL_ReleaseGPUGraphicsPipeline(engine->primary_gpu, render->circle_pipelines[i]);
         }
         if (render->vertex_shader)
             SDL_ReleaseGPUShader(engine->primary_gpu, render->vertex_shader);
-        if (render->fragment_shader)
-            SDL_ReleaseGPUShader(engine->primary_gpu, render->fragment_shader);
+        if (render->sprite_fragment_shader)
+            SDL_ReleaseGPUShader(engine->primary_gpu, render->sprite_fragment_shader);
+        if (render->shape_fragment_shader)
+            SDL_ReleaseGPUShader(engine->primary_gpu, render->shape_fragment_shader);
+        if (render->circle_fragment_shader)
+            SDL_ReleaseGPUShader(engine->primary_gpu, render->circle_fragment_shader);
         for (uint32_t i = 0; i < 2; i++) {
             if (render->samplers[i])
                 SDL_ReleaseGPUSampler(engine->primary_gpu, render->samplers[i]);
@@ -51,15 +59,19 @@ void sirender_register() {
             ecs_in_optional(SIVirtualResolution),
         },
     });
-    render->sprite_query = ecs_query({
+    render->renderable_query = ecs_query({
         .terms = {
-            ecs_in(SISprite),
+            ecs_filter(SIRenderable),
             ecs_in(SIWorldTransform2D),
             ecs_in(SIColor),
-            ecs_in(SISpriteFlip),
-            ecs_in(SIPivot),
             ecs_in(SIBlendMode),
+            ecs_in_optional(SISprite),
+            ecs_in_optional(SISpriteFlip),
+            ecs_in_optional(SIPivot),
             ecs_in_optional(SISpriteSheet),
+            ecs_in_optional(SICircle),
+            ecs_in_optional(SIRectangle),
+            ecs_in_optional(SITriangle),
         },
         .relations = {
             ecs_rel(Layer),

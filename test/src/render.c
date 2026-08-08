@@ -124,3 +124,78 @@ void render_extracts_sheet_region_and_layer_order(void) {
 
     ecs_fini();
 }
+
+void render_extracts_colored_shapes(void) {
+    ecs_init();
+    import_engine();
+
+    ecs_entity_t camera = ecs_new();
+    ecs_add(camera, SICamera2D);
+
+    ecs_entity_t circle = ecs_new();
+    ecs_set(circle, SICircle, { .radius = 12.0f });
+    ecs_set(circle, SIColor, { .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f });
+
+    ecs_entity_t rectangle = ecs_new();
+    ecs_set(rectangle, SIRectangle, { .width = 20.0f, .height = 8.0f });
+    ecs_set(rectangle, SIColor, { .r = 0.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f });
+
+    ecs_entity_t triangle = ecs_new();
+    ecs_set(triangle, SITriangle, { .base = 18.0f, .height = 24.0f });
+    ecs_set(triangle, SIColor, { .r = 0.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f });
+
+    sirender_extract(NULL);
+
+    SIRenderQueue *queue = &ecs_resource(SIRenderState)->views[0].queue;
+    test_int(3, queue->count);
+    bool found_circle = false;
+    bool found_rectangle = false;
+    bool found_triangle = false;
+    for (uint32_t i = 0; i < queue->count; i++) {
+        SIRenderCommand *command = &queue->commands[i];
+        if (command->primitive == SI_RENDER_CIRCLE) {
+            found_circle = true;
+            test_assert(command->shape_a == 12.0f);
+            test_assert(command->color.r == 1.0f);
+        } else if (command->primitive == SI_RENDER_RECTANGLE) {
+            found_rectangle = true;
+            test_assert(command->width == 20.0f);
+            test_assert(command->height == 8.0f);
+            test_assert(command->color.g == 1.0f);
+        } else if (command->primitive == SI_RENDER_TRIANGLE) {
+            found_triangle = true;
+            test_assert(command->shape_a == 18.0f);
+            test_assert(command->shape_b == 24.0f);
+            test_assert(command->color.b == 1.0f);
+        }
+    }
+    test_true(found_circle);
+    test_true(found_rectangle);
+    test_true(found_triangle);
+
+    ecs_fini();
+}
+
+void render_culls_shapes(void) {
+    ecs_init();
+    import_engine();
+
+    ecs_entity_t camera = ecs_new();
+    ecs_add(camera, SICamera2D);
+
+    ecs_entity_t visible = ecs_new();
+    ecs_set(visible, SICircle, { .radius = 4.0f });
+
+    ecs_entity_t hidden = ecs_new();
+    ecs_set(hidden, SIRectangle, { .width = 8.0f, .height = 8.0f });
+    ecs_set(hidden, SIWorldTransform2D, { .x = 1000000.0f, .scale_x = 1, .scale_y = 1 });
+
+    sirender_extract(NULL);
+
+    test_int(1, ecs_resource(SIRenderState)->views[0].queue.count);
+    test_assert(
+        ecs_resource(SIRenderState)->views[0].queue.commands[0].entity == visible
+    );
+
+    ecs_fini();
+}

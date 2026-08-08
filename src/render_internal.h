@@ -9,11 +9,28 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef enum {
+    SI_RENDER_SPRITE,
+    SI_RENDER_RECTANGLE,
+    SI_RENDER_CIRCLE,
+    SI_RENDER_TRIANGLE,
+} SIRenderPrimitive;
+
+typedef enum {
+    SI_RENDER_PIPELINE_SPRITE,
+    SI_RENDER_PIPELINE_SHAPE,
+    SI_RENDER_PIPELINE_CIRCLE,
+} SIRenderPipeline;
+
 typedef struct {
     ecs_entity_t layer;
+    ecs_entity_t entity;
+    SITextureHandle texture;
     SDL_GPUTexture *gpu_texture;
     SIFilterMode filter;
     SIBlendModeValue blend;
+    SIRenderPrimitive primitive;
+    SIRenderPipeline pipeline;
     float x;
     float y;
     float rotation;
@@ -27,6 +44,9 @@ typedef struct {
     float v1;
     float width;
     float height;
+    float shape_a;
+    float shape_b;
+    uint32_t vertex_offset;
     SIColor color;
     bool flip_x;
     bool flip_y;
@@ -70,14 +90,18 @@ ECS_RESOURCE_DECLARE(SIRenderState, {
     uint32_t vertex_count;
     uint32_t vertex_capacity;
     SDL_GPUShader *vertex_shader;
-    SDL_GPUShader *fragment_shader;
-    SDL_GPUGraphicsPipeline *pipelines[3];
+    SDL_GPUShader *sprite_fragment_shader;
+    SDL_GPUShader *shape_fragment_shader;
+    SDL_GPUShader *circle_fragment_shader;
+    SDL_GPUGraphicsPipeline *sprite_pipelines[3];
+    SDL_GPUGraphicsPipeline *shape_pipelines[3];
+    SDL_GPUGraphicsPipeline *circle_pipelines[3];
     SDL_GPUSampler *samplers[2];
     SDL_GPUBuffer *vertex_buffer;
     SDL_GPUTransferBuffer *transfer_buffer;
     uint32_t gpu_vertex_capacity;
     ecs_query_id_t camera_query;
-    ecs_query_id_t sprite_query;
+    ecs_query_id_t renderable_query;
 });
 
 void sirender_begin_frame(ecs_iter_t *it);

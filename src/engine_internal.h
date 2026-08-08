@@ -14,6 +14,7 @@ ECS_RESOURCE_DECLARE(SIEngineCtx, {
 });
 
 ECS_MODULE_DECLARE(siscene2d, {});
+ECS_TAG_DECLARE(SIRenderable);
 
 void siwindow_register();
 void siassets_register();

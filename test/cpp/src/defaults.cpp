@@ -38,6 +38,11 @@ void defaults_component_defaults(void) {
     test_true(SISpriteFlip{}.y == false);
     test_true(SIBlendMode{}.value == SI_BLEND_NORMAL);
     test_true(SISprite{}.frame_index == 0);
+    test_true(SICircle{}.radius == 1.0f);
+    test_true(SIRectangle{}.width == 1.0f);
+    test_true(SIRectangle{}.height == 1.0f);
+    test_true(SITriangle{}.base == 1.0f);
+    test_true(SITriangle{}.height == 1.0f);
 }
 
 void defaults_camera_defaults(void) {
@@ -74,7 +79,7 @@ void defaults_sprite_default_layer(void) {
 
     test_true(sprite.has<SITransform2D>());
     test_true(sprite.has<SIWorldTransform2D>());
-    test_int(SILayerActors, sprite.target<Layer>().id());
+    test_int(SILayerWorld, sprite.target<Layer>().id());
 
     ecs_fini();
 }
