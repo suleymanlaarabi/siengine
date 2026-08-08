@@ -3,10 +3,10 @@
 #include "siengine.h"
 
 int main(int argc, char *argv[]) {
-    ecs::init({ .target_fps = 60 });
+    ecs::init({ .target_fps = 120 });
 
     ecs::import<siengine>();
-    // ecs::import<sirest>();
+    ecs::import<sirest>();
 
     ecs::set_resource(SIWindow("Hello"));
     ecs::set_resource(SIAssetRoot("../../../../assets"));
@@ -26,11 +26,12 @@ int main(int argc, char *argv[]) {
             .frame_width = 128,
             .frame_height = 128,
         },
-        Velocity{50}
+        Velocity{50},
+        SITransform2D::from_xy(-200, 0)
     ).relate<Layer>(SILayerActors);
 
     ecs::system()
-        .phase(EcsOnUpdate)
+        .phase(EcsPreUpdate)
         .each([](SITransform2D &transform, const Velocity &vel, ecs::res<DeltaTime> time) {
             transform.x += vel.x * time->value;
             transform.y += vel.y * time->value;

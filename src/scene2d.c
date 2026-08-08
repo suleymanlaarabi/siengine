@@ -218,7 +218,7 @@ void siscene2d_import(const siscene2d_props_t *props) {
 
     ecs_system_id_t update_no_parent = ecs_system({
         .name = "UpdateWorldTransformsWithoutParent",
-        .phase = EcsOnUpdate,
+        .phase = EcsPostUpdate,
         .callback = update_world_transforms_no_parent,
         .query = {
             .terms = {
@@ -233,7 +233,7 @@ void siscene2d_import(const siscene2d_props_t *props) {
 
     ecs_system({
         .name = "UpdateWorldTransformsWithParent",
-        .phase = EcsOnUpdate,
+        .phase = EcsPostUpdate,
         .callback = update_world_transforms_w_parent,
         .after = { update_no_parent },
         .query = {

@@ -63,7 +63,15 @@ extern ecs_entity_t SILayerUI;
 ECS_COMPONENT_DECLARE_CPP(
     SITransform2D,
     ECS_CPP_FIELDS(float x; float y; float rotation; float scale_x; float scale_y;),
-    ECS_CPP_METHODS(SITransform2D() : scale_x(1), scale_y(1){})
+    ECS_CPP_METHODS(
+        SITransform2D() : scale_x(1), scale_y(1) {}
+        static SITransform2D from_xy(float x, float y) {
+            SITransform2D transform;
+            transform.x = x;
+            transform.y = y;
+            return transform;
+        }
+    )
 );
 
 ECS_COMPONENT_DECLARE_CPP(

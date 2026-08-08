@@ -74,10 +74,10 @@ void sirender_register() {
             .callback = sirender_begin_frame,
         }
     );
-    render->extract_system = ecs_system(
+    ecs_system(
         {
             .name = "ExtractRender",
-            .phase = EcsOnRender,
+            .phase = EcsPreRender,
             .callback = sirender_extract,
         }
     );
@@ -86,7 +86,6 @@ void sirender_register() {
             .name = "DrawWindow",
             .phase = EcsOnRender,
             .callback = sirender_draw_window,
-            .after = { render->extract_system },
         }
     );
     ecs_system(

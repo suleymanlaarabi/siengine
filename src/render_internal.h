@@ -78,7 +78,6 @@ ECS_RESOURCE_DECLARE(SIRenderState, {
     uint32_t gpu_vertex_capacity;
     ecs_query_id_t camera_query;
     ecs_query_id_t sprite_query;
-    ecs_system_id_t extract_system;
 });
 
 void sirender_begin_frame(ecs_iter_t *it);
