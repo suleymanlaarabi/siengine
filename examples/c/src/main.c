@@ -13,21 +13,8 @@ int main(void) {
     SITextureHandle texture = siengine_load_texture("hero.png", SI_FILTER_NEAREST);
 
     ecs_entity_t camera = ecs_new();
-    ecs_set(
-        camera,
-        SICamera2D,
-        { .zoom = 1.0f, .viewport_width = 320.0f, .viewport_height = 180.0f }
-    );
-    ecs_set(
-        camera,
-        SIVirtualResolution,
-        {
-            .width = 320,
-            .height = 180,
-            .enabled = true,
-            .pixel_perfect = true,
-        }
-    );
+    ecs_add(camera, SICamera2D);
+    ecs_add(camera, SIVirtualResolution);
 
     ecs_entity_t sprite = ecs_new();
     ecs_set(sprite, SISprite, { .texture = texture });

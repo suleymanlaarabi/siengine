@@ -13,7 +13,9 @@
         "testcases": [
           "transform_adds_world_transform",
           "camera_requires_transform",
-          "query_matches_active_cameras",
+          "camera_add_initializes_defaults",
+          "query_matches_enabled_cameras",
+          "virtual_resolution_add_initializes_defaults",
           "child_of_keeps_native_parent_relation",
           "world_transform_follows_parent",
           "default_layers_are_ordered",

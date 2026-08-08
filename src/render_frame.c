@@ -50,8 +50,8 @@ void sirender_extract(ecs_iter_t *it) {
                 .viewport_height = viewport_height,
                 .virtual_width = virtual_resolution ? virtual_resolution[i].width : 0,
                 .virtual_height = virtual_resolution ? virtual_resolution[i].height : 0,
-                .virtual_enabled = virtual_resolution && virtual_resolution[i].enabled,
-                .pixel_perfect = virtual_resolution && virtual_resolution[i].pixel_perfect,
+                .virtual_enabled = virtual_resolution != NULL,
+                .pixel_perfect = virtual_resolution ? virtual_resolution[i].pixel_perfect : false,
             };
         }
     }

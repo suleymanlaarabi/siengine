@@ -65,6 +65,24 @@ static void camera_viewport_on_add(ecs_entity_t entity, ecs_component_t componen
     *viewport = (SICameraViewport){ .width = 1.0f, .height = 1.0f };
 }
 
+static void camera_on_add(ecs_entity_t entity, ecs_component_t component, void *value) {
+    (void)entity;
+    (void)component;
+    SICamera2D *camera = value;
+    *camera = (SICamera2D){ .zoom = 1.0f, .viewport_width = 320.0f, .viewport_height = 180.0f };
+}
+
+static void virtual_resolution_on_add(
+    ecs_entity_t entity,
+    ecs_component_t component,
+    void *value
+) {
+    (void)entity;
+    (void)component;
+    SIVirtualResolution *resolution = value;
+    *resolution = (SIVirtualResolution){ .width = 320, .height = 180, .pixel_perfect = true };
+}
+
 static void sprite_on_add(ecs_entity_t entity, ecs_component_t component, void *value) {
     (void)component;
     (void)value;
@@ -74,10 +92,9 @@ static void sprite_on_add(ecs_entity_t entity, ecs_component_t component, void *
 
 ECS_COMPONENT_DEFINE(SITransform2D, .on_add = transform_on_add);
 ECS_COMPONENT_DEFINE(SIWorldTransform2D, .on_add = world_transform_on_add);
-ECS_COMPONENT_DEFINE(SICamera2D);
-ECS_COMPONENT_DEFINE(SIActiveCamera);
+ECS_COMPONENT_DEFINE(SICamera2D, .on_add = camera_on_add);
 ECS_COMPONENT_DEFINE(SICameraViewport, .on_add = camera_viewport_on_add);
-ECS_COMPONENT_DEFINE(SIVirtualResolution);
+ECS_COMPONENT_DEFINE(SIVirtualResolution, .on_add = virtual_resolution_on_add);
 ECS_COMPONENT_DEFINE(SIColor);
 ECS_COMPONENT_DEFINE(SISprite, .on_add = sprite_on_add);
 ECS_COMPONENT_DEFINE(SISpriteSheet);
@@ -165,7 +182,6 @@ void siscene2d_import(const siscene2d_props_t *props) {
     ECS_COMPONENT_REGISTER(SITransform2D);
     ECS_COMPONENT_REGISTER(SIWorldTransform2D);
     ECS_COMPONENT_REGISTER(SICamera2D);
-    ECS_COMPONENT_REGISTER(SIActiveCamera);
     ECS_COMPONENT_REGISTER(SICameraViewport);
     ECS_COMPONENT_REGISTER(SIVirtualResolution);
     ECS_COMPONENT_REGISTER(SIColor);
@@ -192,7 +208,6 @@ void siscene2d_import(const siscene2d_props_t *props) {
 
     ecs_with(ecs_id(SITransform2D), ecs_id(SIWorldTransform2D));
     ecs_with(ecs_id(SICamera2D), ecs_id(SITransform2D));
-    ecs_with(ecs_id(SICamera2D), ecs_id(SIActiveCamera));
     ecs_with(ecs_id(SICamera2D), ecs_id(SICameraViewport));
     ecs_with(ecs_id(SISprite), ecs_id(SITransform2D));
     ecs_with(ecs_id(SIAnimation), ecs_id(SISprite));

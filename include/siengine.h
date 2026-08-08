@@ -81,11 +81,9 @@ ECS_COMPONENT_DECLARE_CPP(
     ECS_CPP_FIELDS(float x; float y; float width; float height;),
     ECS_CPP_METHODS(SICameraViewport() : width(1), height(1) {})
 );
-ECS_COMPONENT_DECLARE(SIActiveCamera, {});
 ECS_COMPONENT_DECLARE(SIVirtualResolution, {
     uint32_t width;
     uint32_t height;
-    bool enabled;
     bool pixel_perfect;
 });
 ECS_COMPONENT_DECLARE_CPP(

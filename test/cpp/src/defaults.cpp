@@ -23,6 +23,9 @@ void defaults_component_defaults(void) {
     test_true(SICamera2D{}.zoom == 1.0f);
     test_true(SICamera2D{}.viewport_width == 320.0f);
     test_true(SICamera2D{}.viewport_height == 180.0f);
+    test_true(SIVirtualResolution{}.width == 0);
+    test_true(SIVirtualResolution{}.height == 0);
+    test_true(SIVirtualResolution{}.pixel_perfect == false);
     test_true(SITransform2D{}.scale_x == 1.0f);
     test_true(SITransform2D{}.scale_y == 1.0f);
     test_true(SIColor{}.r == 1.0f);
@@ -41,20 +44,24 @@ void defaults_camera_defaults(void) {
     ecs_init();
     register_scene2d();
 
-    auto camera = ecs::entity::create().set(SICamera2D{});
+    auto camera = ecs::entity::create().add<SICamera2D>();
 
     test_true(camera.has<SICamera2D>());
     test_true(camera.has<SITransform2D>());
     test_true(camera.has<SIWorldTransform2D>());
     test_true(camera.has<SICameraViewport>());
-    test_true(camera.has<SIActiveCamera>());
+    test_true(camera.get<SICamera2D>().zoom == 1.0f);
+    test_true(camera.get<SICamera2D>().viewport_width == 320.0f);
+    test_true(camera.get<SICamera2D>().viewport_height == 180.0f);
     test_true(camera.get<SITransform2D>().scale_x == 1.0f);
     test_true(camera.get<SITransform2D>().scale_y == 1.0f);
     test_true(camera.get<SICameraViewport>().width == 1.0f);
     test_true(camera.get<SICameraViewport>().height == 1.0f);
 
-    camera.remove<SIActiveCamera>();
-    test_false(camera.has<SIActiveCamera>());
+    auto resolution = ecs::entity::create().add<SIVirtualResolution>();
+    test_true(resolution.get<SIVirtualResolution>().width == 320);
+    test_true(resolution.get<SIVirtualResolution>().height == 180);
+    test_true(resolution.get<SIVirtualResolution>().pixel_perfect);
 
     ecs_fini();
 }

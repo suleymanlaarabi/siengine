@@ -49,7 +49,6 @@ void sirender_register() {
             ecs_in(SIWorldTransform2D),
             ecs_in_optional(SICameraViewport),
             ecs_in_optional(SIVirtualResolution),
-            ecs_filter(SIActiveCamera),
         },
     });
     render->sprite_query = ecs_query({

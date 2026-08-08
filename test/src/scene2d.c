@@ -43,38 +43,45 @@ void scene2d_camera_requires_transform(void) {
         .viewport_width = 320.0f,
         .viewport_height = 180.0f,
     });
-    ecs_add(camera, SIActiveCamera);
 
     test_true(ecs_has(camera, SITransform2D));
     test_true(ecs_has(camera, SIWorldTransform2D));
-    test_true(ecs_has(camera, SIActiveCamera));
     test_true(ecs_has(camera, SICameraViewport));
     test_assert(ecs_get(camera, SICamera2D)->viewport_width == 320.0f);
 
     ecs_fini();
 }
 
-void scene2d_query_matches_active_cameras(void) {
+void scene2d_camera_add_initializes_defaults(void) {
     ecs_init();
     register_scene2d();
 
-    ecs_entity_t first = ecs_new();
-    ecs_add(first, SICamera2D);
-    ecs_add(first, SIActiveCamera);
+    ecs_entity_t camera = ecs_new();
+    ecs_add(camera, SICamera2D);
 
-    ecs_entity_t second = ecs_new();
-    ecs_add(second, SICamera2D);
-    ecs_add(second, SIActiveCamera);
+    SICamera2D *value = ecs_get(camera, SICamera2D);
+    test_assert(value->zoom == 1.0f);
+    test_assert(value->viewport_width == 320.0f);
+    test_assert(value->viewport_height == 180.0f);
 
-    ecs_entity_t inactive = ecs_new();
-    ecs_add(inactive, SICamera2D);
-    ecs_remove(inactive, SIActiveCamera);
+    ecs_fini();
+}
+
+void scene2d_query_matches_enabled_cameras(void) {
+    ecs_init();
+    register_scene2d();
+
+    ecs_entity_t enabled = ecs_new();
+    ecs_add(enabled, SICamera2D);
+
+    ecs_entity_t disabled = ecs_new();
+    ecs_add(disabled, SICamera2D);
+    ecs_add(disabled, Disabled);
 
     ecs_query_id_t query = ecs_query(
         { .terms = {
               ecs_in(SICamera2D),
               ecs_in(SITransform2D),
-              ecs_filter(SIActiveCamera),
           } }
     );
     ecs_iter_t it = ecs_query_iter(query);
@@ -84,9 +91,24 @@ void scene2d_query_matches_active_cameras(void) {
         count += it.count;
     }
 
-    test_int(2, count);
+    test_int(1, count);
 
     ecs_query_fini(query);
+    ecs_fini();
+}
+
+void scene2d_virtual_resolution_add_initializes_defaults(void) {
+    ecs_init();
+    register_scene2d();
+
+    ecs_entity_t camera = ecs_new();
+    ecs_add(camera, SIVirtualResolution);
+
+    SIVirtualResolution *resolution = ecs_get(camera, SIVirtualResolution);
+    test_int(320, resolution->width);
+    test_int(180, resolution->height);
+    test_true(resolution->pixel_perfect);
+
     ecs_fini();
 }
 
