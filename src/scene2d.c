@@ -72,11 +72,7 @@ static void camera_on_add(ecs_entity_t entity, ecs_component_t component, void *
     *camera = (SICamera2D){ .zoom = 1.0f, .viewport_width = 320.0f, .viewport_height = 180.0f };
 }
 
-static void virtual_resolution_on_add(
-    ecs_entity_t entity,
-    ecs_component_t component,
-    void *value
-) {
+static void virtual_resolution_on_add(ecs_entity_t entity, ecs_component_t component, void *value) {
     (void)entity;
     (void)component;
     SIVirtualResolution *resolution = value;
@@ -88,6 +84,9 @@ static void sprite_on_add(ecs_entity_t entity, ecs_component_t component, void *
     (void)value;
     if (!ecs_has_relation(entity, Layer))
         ecs_relate(entity, Layer, SILayerActors);
+    *ecs_get(entity, SIColor) = (SIColor){ 1, 1, 1, 1 };
+    *ecs_get(entity, SIPivot) = (SIPivot){ .x = 0.5f, .y = 0.5f };
+    *ecs_get(entity, SIBlendMode) = (SIBlendMode){ .value = SI_BLEND_NORMAL };
 }
 
 ECS_COMPONENT_DEFINE(SITransform2D, .on_add = transform_on_add);
@@ -146,7 +145,7 @@ static void update_world_transforms_w_parent(ecs_iter_t *it) {
 }
 
 static void update_world_transforms_no_parent(ecs_iter_t *it) {
-    SITransform2D *restrict local = ecs_field(it, 0);
+    const SITransform2D *restrict local = ecs_field(it, 0);
     SIWorldTransform2D *restrict world = ecs_field(it, 1);
 
     memcpy(world, local, sizeof(SITransform2D));
@@ -154,7 +153,7 @@ static void update_world_transforms_no_parent(ecs_iter_t *it) {
 
 static void update_animations(ecs_iter_t *it) {
     SISprite *sprites = ecs_field(it, 0);
-    SIAnimation *animations = ecs_field(it, 1);
+    const SIAnimation *restrict animations = ecs_field(it, 1);
     SIAnimationTimer *timers = ecs_field(it, 2);
 
     for (uint32_t i = 0; i < it->count; i++) {
@@ -210,6 +209,10 @@ void siscene2d_import(const siscene2d_props_t *props) {
     ecs_with(ecs_id(SICamera2D), ecs_id(SITransform2D));
     ecs_with(ecs_id(SICamera2D), ecs_id(SICameraViewport));
     ecs_with(ecs_id(SISprite), ecs_id(SITransform2D));
+    ecs_with(ecs_id(SISprite), ecs_id(SIColor));
+    ecs_with(ecs_id(SISprite), ecs_id(SISpriteFlip));
+    ecs_with(ecs_id(SISprite), ecs_id(SIPivot));
+    ecs_with(ecs_id(SISprite), ecs_id(SIBlendMode));
     ecs_with(ecs_id(SIAnimation), ecs_id(SISprite));
     ecs_with(ecs_id(SIAnimation), ecs_id(SIAnimationTimer));
 

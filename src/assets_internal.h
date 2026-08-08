@@ -27,12 +27,6 @@ ECS_RESOURCE_DECLARE(SIAssetStore, {
 void siassets_register(void);
 void siassets_shutdown(void);
 
-bool siengine_texture_info(
-    SITextureHandle handle,
-    SDL_GPUTexture **texture,
-    uint32_t *width,
-    uint32_t *height,
-    SIFilterMode *filter
-);
+SITextureSlot *siengine_texture_slot(SITextureHandle handle);
 
 #endif

@@ -29,13 +29,13 @@ void sirender_shutdown() {
         if (render->transfer_buffer)
             SDL_ReleaseGPUTransferBuffer(engine->primary_gpu, render->transfer_buffer);
     }
+    for (uint32_t i = 0; i < render->view_capacity; i++)
+        free(render->views[i].queue.commands);
     free(render->views);
-    free(render->queue.commands);
     free(render->vertices);
     render->views = NULL;
-    render->queue.commands = NULL;
     render->vertices = NULL;
-    sirender_frame_shutdown();
+    render->cmd = NULL;
 }
 
 void sirender_register() {
@@ -47,7 +47,7 @@ void sirender_register() {
         .terms = {
             ecs_in(SICamera2D),
             ecs_in(SIWorldTransform2D),
-            ecs_in_optional(SICameraViewport),
+            ecs_in(SICameraViewport),
             ecs_in_optional(SIVirtualResolution),
         },
     });
@@ -55,10 +55,10 @@ void sirender_register() {
         .terms = {
             ecs_in(SISprite),
             ecs_in(SIWorldTransform2D),
-            ecs_in_optional(SIColor),
-            ecs_in_optional(SISpriteFlip),
-            ecs_in_optional(SIPivot),
-            ecs_in_optional(SIBlendMode),
+            ecs_in(SIColor),
+            ecs_in(SISpriteFlip),
+            ecs_in(SIPivot),
+            ecs_in(SIBlendMode),
             ecs_in_optional(SISpriteSheet),
         },
         .relations = {

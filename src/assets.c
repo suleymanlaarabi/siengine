@@ -1,12 +1,10 @@
 #include "assets_internal.h"
-#include <SDL3_image/SDL_image.h>
 #include <SDL3/SDL_filesystem.h>
+#include <SDL3_image/SDL_image.h>
 #include <stdlib.h>
 #include <string.h>
 
-enum {
-    SI_HANDLE_GENERATION_MASK = 0x00ffffffu,
-};
+#define SI_HANDLE_GENERATION_MASK 0x00ffffffu
 
 ECS_RESOURCE_DEFINE(SIAssetStore);
 ECS_RESOURCE_DEFINE(SIAssetRoot);
@@ -35,9 +33,7 @@ static SITextureHandle make_texture_handle(uint32_t index, uint32_t generation) 
     return ((uint64_t)(generation & SI_HANDLE_GENERATION_MASK) << 32) | index;
 }
 
-static uint32_t handle_index(SITextureHandle handle) {
-    return (uint32_t)handle;
-}
+static uint32_t handle_index(SITextureHandle handle) { return (uint32_t)handle; }
 
 static uint32_t handle_generation(SITextureHandle handle) {
     return (uint32_t)((handle >> 32) & SI_HANDLE_GENERATION_MASK);
@@ -75,20 +71,14 @@ static uint32_t alloc_texture_slot(SIAssetStore *assets) {
     }
 
     uint32_t index = ++assets->texture_count;
-    assets->textures = grow_array(
-        assets->textures,
-        &assets->texture_capacity,
-        sizeof(*assets->textures),
-        index
-    );
+    assets->textures =
+        grow_array(assets->textures, &assets->texture_capacity, sizeof(*assets->textures), index);
     if (!assets->textures[index].generation)
         assets->textures[index].generation = 1;
     return index;
 }
 
-static SIAssetStore *assets_store(void) {
-    return ecs_try_get_resource(SIAssetStore);
-}
+static SIAssetStore *assets_store(void) { return ecs_try_get_resource(SIAssetStore); }
 
 SITextureHandle siengine_load_texture(const char *path, SIFilterMode filter) {
     SIAssetStore *assets = assets_store();
@@ -101,13 +91,7 @@ SITextureHandle siengine_load_texture(const char *path, SIFilterMode filter) {
     SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(command);
     int width = 0;
     int height = 0;
-    SDL_GPUTexture *texture = IMG_LoadGPUTexture(
-        engine->primary_gpu,
-        copy,
-        path,
-        &width,
-        &height
-    );
+    SDL_GPUTexture *texture = IMG_LoadGPUTexture(engine->primary_gpu, copy, path, &width, &height);
 
     if (!texture) {
         SDL_EndGPUCopyPass(copy);
@@ -130,31 +114,8 @@ SITextureHandle siengine_load_texture(const char *path, SIFilterMode filter) {
     return make_texture_handle(index, slot->generation);
 }
 
-bool siengine_texture_info(
-    SITextureHandle handle,
-    SDL_GPUTexture **texture,
-    uint32_t *width,
-    uint32_t *height,
-    SIFilterMode *filter
-) {
-    SIAssetStore *assets = assets_store();
-    uint32_t index = handle_index(handle);
-    if (!assets || !index || index > assets->texture_count)
-        return false;
-
-    SITextureSlot *slot = &assets->textures[index];
-    if (!slot->alive || slot->generation != handle_generation(handle))
-        return false;
-
-    if (texture)
-        *texture = slot->gpu;
-    if (width)
-        *width = slot->width;
-    if (height)
-        *height = slot->height;
-    if (filter)
-        *filter = slot->filter;
-    return true;
+SITextureSlot *siengine_texture_slot(SITextureHandle handle) {
+    return &ecs_resource(SIAssetStore)->textures[handle_index(handle)];
 }
 
 static void release_texture_slot(SIAssetStore *assets, uint32_t index) {

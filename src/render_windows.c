@@ -33,14 +33,10 @@ static SDL_GPUGraphicsPipeline *create_pipeline(
     SDL_GPUTextureFormat format,
     SIBlendModeValue blend
 ) {
-    static SDL_GPUVertexBufferDescription vertex_buffers[] = {
-        {
-            .slot = 0,
-            .pitch = sizeof(SIRenderVertex),
-            .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
-        },
+    static const SDL_GPUVertexBufferDescription vertex_buffers[] = {
+        { .slot = 0, .pitch = sizeof(SIRenderVertex), .input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX }
     };
-    static SDL_GPUVertexAttribute attributes[] = {
+    static const SDL_GPUVertexAttribute attributes[] = {
         { .location = 0,
           .buffer_slot = 0,
           .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
@@ -52,92 +48,68 @@ static SDL_GPUGraphicsPipeline *create_pipeline(
         { .location = 2,
           .buffer_slot = 0,
           .format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT4,
-          .offset = 16 },
+          .offset = 16 }
     };
-    SDL_GPUColorTargetDescription target = {
-        .format = format,
-        .blend_state = blend_state(blend),
-    };
+    SDL_GPUColorTargetDescription target = { .format = format, .blend_state = blend_state(blend) };
     SDL_GPUGraphicsPipelineCreateInfo info = {
-        .vertex_shader = render->vertex_shader,
-        .fragment_shader = render->fragment_shader,
+        .vertex_shader = render->vertex_shader, .fragment_shader = render->fragment_shader,
         .vertex_input_state = {
-            .vertex_buffer_descriptions = vertex_buffers,
-            .num_vertex_buffers = 1,
-            .vertex_attributes = attributes,
-            .num_vertex_attributes = 3,
+            .vertex_buffer_descriptions = vertex_buffers, .num_vertex_buffers = 1,
+            .vertex_attributes = attributes, .num_vertex_attributes = 3,
         },
         .primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
         .rasterizer_state = {
-            .fill_mode = SDL_GPU_FILLMODE_FILL,
-            .cull_mode = SDL_GPU_CULLMODE_NONE,
-            .front_face = SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE,
-            .enable_depth_clip = true,
+            .fill_mode = SDL_GPU_FILLMODE_FILL, .cull_mode = SDL_GPU_CULLMODE_NONE,
+            .front_face = SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE, .enable_depth_clip = true,
         },
         .multisample_state = { .sample_count = SDL_GPU_SAMPLECOUNT_1 },
-        .target_info = {
-            .color_target_descriptions = &target,
-            .num_color_targets = 1,
-        },
+        .target_info = { .color_target_descriptions = &target, .num_color_targets = 1 },
     };
     return SDL_CreateGPUGraphicsPipeline(engine->primary_gpu, &info);
 }
 
 static void
 ensure_gpu_resources(SIEngineCtx *engine, SIRenderState *render, SDL_GPUTextureFormat format) {
-    if (!render->vertex_shader || render->pipeline_format != format) {
-        for (uint32_t i = 0; i < 3; i++) {
-            if (render->pipelines[i])
-                SDL_ReleaseGPUGraphicsPipeline(engine->primary_gpu, render->pipelines[i]);
-            render->pipelines[i] = NULL;
-        }
+    if (render->vertex_shader)
+        return;
 
-        if (!render->vertex_shader) {
-            render->vertex_shader = SDL_CreateGPUShader(
-                engine->primary_gpu,
-                &(SDL_GPUShaderCreateInfo){
-                    .code_size = si_sprite_vertex_shader_size,
-                    .code = si_sprite_vertex_shader,
-                    .entrypoint = "main",
-                    .format = SDL_GPU_SHADERFORMAT_SPIRV,
-                    .stage = SDL_GPU_SHADERSTAGE_VERTEX,
-                }
-            );
-            render->fragment_shader = SDL_CreateGPUShader(
-                engine->primary_gpu,
-                &(SDL_GPUShaderCreateInfo){
-                    .code_size = si_sprite_fragment_shader_size,
-                    .code = si_sprite_fragment_shader,
-                    .entrypoint = "main",
-                    .format = SDL_GPU_SHADERFORMAT_SPIRV,
-                    .stage = SDL_GPU_SHADERSTAGE_FRAGMENT,
-                    .num_samplers = 1,
-                }
-            );
+    render->vertex_shader = SDL_CreateGPUShader(
+        engine->primary_gpu,
+        &(SDL_GPUShaderCreateInfo){
+            .code_size = si_sprite_vertex_shader_size,
+            .code = si_sprite_vertex_shader,
+            .entrypoint = "main",
+            .format = SDL_GPU_SHADERFORMAT_SPIRV,
+            .stage = SDL_GPU_SHADERSTAGE_VERTEX,
         }
-
-        if (render->vertex_shader && render->fragment_shader) {
-            for (uint32_t i = 0; i < 3; i++)
-                render->pipelines[i] = create_pipeline(engine, render, format, i);
-            render->pipeline_format = format;
+    );
+    render->fragment_shader = SDL_CreateGPUShader(
+        engine->primary_gpu,
+        &(SDL_GPUShaderCreateInfo){
+            .code_size = si_sprite_fragment_shader_size,
+            .code = si_sprite_fragment_shader,
+            .entrypoint = "main",
+            .format = SDL_GPU_SHADERFORMAT_SPIRV,
+            .stage = SDL_GPU_SHADERSTAGE_FRAGMENT,
+            .num_samplers = 1,
         }
-    }
+    );
+    for (uint32_t i = 0; i < 3; i++)
+        render->pipelines[i] = create_pipeline(engine, render, format, i);
 
-    if (!render->samplers[SI_FILTER_NEAREST]) {
-        SDL_GPUSamplerCreateInfo info = {
-            .min_filter = SDL_GPU_FILTER_NEAREST,
-            .mag_filter = SDL_GPU_FILTER_NEAREST,
-            .mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_NEAREST,
-            .address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
-            .address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
-            .address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
-        };
-        render->samplers[SI_FILTER_NEAREST] = SDL_CreateGPUSampler(engine->primary_gpu, &info);
-        info.min_filter = SDL_GPU_FILTER_LINEAR;
-        info.mag_filter = SDL_GPU_FILTER_LINEAR;
-        info.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;
-        render->samplers[SI_FILTER_LINEAR] = SDL_CreateGPUSampler(engine->primary_gpu, &info);
-    }
+    SDL_GPUSamplerCreateInfo info = {
+        .min_filter = SDL_GPU_FILTER_NEAREST,
+        .mag_filter = SDL_GPU_FILTER_NEAREST,
+        .mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_NEAREST,
+        .address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+        .address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+        .address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE,
+    };
+    render->samplers[SI_FILTER_NEAREST] = SDL_CreateGPUSampler(engine->primary_gpu, &info);
+    info.min_filter = SDL_GPU_FILTER_LINEAR;
+    info.mag_filter = SDL_GPU_FILTER_LINEAR;
+    info.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_LINEAR;
+    render->samplers[SI_FILTER_LINEAR] = SDL_CreateGPUSampler(engine->primary_gpu, &info);
 }
 
 static void
@@ -156,23 +128,24 @@ ensure_vertex_buffers(SIEngineCtx *engine, SIRenderState *render, uint32_t verte
 
     render->vertex_buffer = SDL_CreateGPUBuffer(
         engine->primary_gpu,
-        &(SDL_GPUBufferCreateInfo){
-            .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
-            .size = capacity * sizeof(SIRenderVertex),
-        }
+        &(SDL_GPUBufferCreateInfo){ .usage = SDL_GPU_BUFFERUSAGE_VERTEX,
+                                    .size = capacity * sizeof(SIRenderVertex) }
     );
     render->transfer_buffer = SDL_CreateGPUTransferBuffer(
         engine->primary_gpu,
-        &(SDL_GPUTransferBufferCreateInfo){
-            .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
-            .size = capacity * sizeof(SIRenderVertex),
-        }
+        &(SDL_GPUTransferBufferCreateInfo){ .usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD,
+                                            .size = capacity * sizeof(SIRenderVertex) }
     );
     render->gpu_vertex_capacity = capacity;
 }
 
 static uint32_t build_vertices(SIRenderState *render) {
-    uint32_t required = render->queue.count * 6;
+    static const uint8_t corners[6][2] = { { 0, 0 }, { 1, 0 }, { 1, 1 },
+                                           { 0, 0 }, { 1, 1 }, { 0, 1 } };
+    uint32_t required = 0;
+    for (uint32_t view_index = 0; view_index < render->view_count; view_index++)
+        required += render->views[view_index].queue.count * 6;
+
     if (required > render->vertex_capacity) {
         render->vertex_capacity = render->vertex_capacity ? render->vertex_capacity * 2 : 1024;
         while (render->vertex_capacity < required)
@@ -181,47 +154,44 @@ static uint32_t build_vertices(SIRenderState *render) {
             realloc(render->vertices, render->vertex_capacity * sizeof(*render->vertices));
     }
 
-    for (uint32_t i = 0; i < render->queue.count; i++) {
-        SIRenderCommand *command = &render->queue.commands[i];
-        SIRenderView *view = &render->views[command->view_index];
-        float corners[4][2] = {
-            { -command->pivot_x, -command->pivot_y },
-            { 1.0f - command->pivot_x, -command->pivot_y },
-            { 1.0f - command->pivot_x, 1.0f - command->pivot_y },
-            { -command->pivot_x, 1.0f - command->pivot_y },
-        };
-        uint32_t indices[6] = { 0, 1, 2, 0, 2, 3 };
-        float u[2] = {
-            command->flip_x ? command->u1 : command->u0,
-            command->flip_x ? command->u0 : command->u1,
-        };
-        float v[2] = {
-            command->flip_y ? command->v1 : command->v0,
-            command->flip_y ? command->v0 : command->v1,
-        };
-        float c = cosf(command->rotation);
-        float s = sinf(command->rotation);
+    uint32_t vertex_offset = 0;
+    for (uint32_t view_index = 0; view_index < render->view_count; view_index++) {
+        SIRenderView *view = &render->views[view_index];
+        SIRenderQueue *queue = &view->queue;
+        view->vertex_offset = vertex_offset;
 
-        for (uint32_t vertex = 0; vertex < 6; vertex++) {
-            uint32_t corner = indices[vertex];
-            float local_x = corners[corner][0] * command->width * command->scale_x;
-            float local_y = corners[corner][1] * command->height * command->scale_y;
-            float world_x = command->x + local_x * c - local_y * s;
-            float world_y = command->y + local_x * s + local_y * c;
-            float clip_x = (world_x - view->left) / (view->right - view->left) * 2.0f - 1.0f;
-            float clip_y = 1.0f - (world_y - view->top) / (view->bottom - view->top) * 2.0f;
+        for (uint32_t i = 0; i < queue->count; i++) {
+            SIRenderCommand *command = &queue->commands[i];
+            float u0 = command->flip_x ? command->u1 : command->u0;
+            float u1 = command->flip_x ? command->u0 : command->u1;
+            float v0 = command->flip_y ? command->v1 : command->v0;
+            float v1 = command->flip_y ? command->v0 : command->v1;
+            float c = cosf(command->rotation);
+            float s = sinf(command->rotation);
 
-            render->vertices[i * 6 + vertex] = (SIRenderVertex){
-                .x = clip_x,
-                .y = clip_y,
-                .u = u[corner == 1 || corner == 2],
-                .v = v[corner >= 2],
-                .r = command->color.r,
-                .g = command->color.g,
-                .b = command->color.b,
-                .a = command->color.a,
-            };
+            for (uint32_t vertex = 0; vertex < 6; vertex++) {
+                float local_x =
+                    (corners[vertex][0] - command->pivot_x) * command->width * command->scale_x;
+                float local_y =
+                    (corners[vertex][1] - command->pivot_y) * command->height * command->scale_y;
+                float world_x = command->x + local_x * c - local_y * s;
+                float world_y = command->y + local_x * s + local_y * c;
+                float clip_x = (world_x - view->left) / (view->right - view->left) * 2.0f - 1.0f;
+                float clip_y = 1.0f - (world_y - view->top) / (view->bottom - view->top) * 2.0f;
+
+                render->vertices[vertex_offset + i * 6 + vertex] = (SIRenderVertex){
+                    .x = clip_x,
+                    .y = clip_y,
+                    .u = corners[vertex][0] ? u1 : u0,
+                    .v = corners[vertex][1] ? v1 : v0,
+                    .r = command->color.r,
+                    .g = command->color.g,
+                    .b = command->color.b,
+                    .a = command->color.a,
+                };
+            }
         }
+        vertex_offset += queue->count * 6;
     }
     return required;
 }
@@ -229,29 +199,28 @@ static uint32_t build_vertices(SIRenderState *render) {
 void sirender_draw_window(ecs_iter_t *it) {
     SIEngineCtx *engine = ecs_resource(SIEngineCtx);
     SIRenderState *render = ecs_resource(SIRenderState);
-    SIRenderFrame *frame = &render->frame;
     SDL_GPUTexture *swapchain_texture = NULL;
     uint32_t pixel_width = 0;
     uint32_t pixel_height = 0;
 
-    if (!engine->window || !frame->cmd)
+    if (!engine->window || !render->cmd)
         return;
 
     if (!SDL_WaitAndAcquireGPUSwapchainTexture(
-            frame->cmd,
+            render->cmd,
             engine->window,
             &swapchain_texture,
             &pixel_width,
             &pixel_height
         )) {
-        SDL_CancelGPUCommandBuffer(frame->cmd);
-        frame->cmd = NULL;
+        SDL_CancelGPUCommandBuffer(render->cmd);
+        render->cmd = NULL;
         return;
     }
 
     if (!swapchain_texture || pixel_width == 0 || pixel_height == 0) {
-        SDL_CancelGPUCommandBuffer(frame->cmd);
-        frame->cmd = NULL;
+        SDL_CancelGPUCommandBuffer(render->cmd);
+        render->cmd = NULL;
         return;
     }
 
@@ -263,20 +232,16 @@ void sirender_draw_window(ecs_iter_t *it) {
     );
     ensure_vertex_buffers(engine, render, vertex_count);
 
-    if (vertex_count && render->vertex_buffer && render->transfer_buffer) {
+    if (vertex_count) {
         void *mapped = SDL_MapGPUTransferBuffer(engine->primary_gpu, render->transfer_buffer, true);
         memcpy(mapped, render->vertices, vertex_count * sizeof(*render->vertices));
         SDL_UnmapGPUTransferBuffer(engine->primary_gpu, render->transfer_buffer);
-        SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(frame->cmd);
+        SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(render->cmd);
         SDL_UploadToGPUBuffer(
             copy,
-            &(SDL_GPUTransferBufferLocation){
-                .transfer_buffer = render->transfer_buffer,
-            },
-            &(SDL_GPUBufferRegion){
-                .buffer = render->vertex_buffer,
-                .size = vertex_count * sizeof(*render->vertices),
-            },
+            &(SDL_GPUTransferBufferLocation){ .transfer_buffer = render->transfer_buffer },
+            &(SDL_GPUBufferRegion){ .buffer = render->vertex_buffer,
+                                    .size = vertex_count * sizeof(*render->vertices) },
             true
         );
         SDL_EndGPUCopyPass(copy);
@@ -289,18 +254,13 @@ void sirender_draw_window(ecs_iter_t *it) {
         .store_op = SDL_GPU_STOREOP_STORE,
     };
 
-    SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(frame->cmd, &color_target, 1, NULL);
-    if (!pass) {
-        SDL_CancelGPUCommandBuffer(frame->cmd);
-        frame->cmd = NULL;
-        return;
-    }
-
-    SDL_GPUBufferBinding vertex_binding = {
-        .buffer = render->vertex_buffer,
-    };
-    if (render->vertex_buffer)
+    SDL_GPURenderPass *pass = SDL_BeginGPURenderPass(render->cmd, &color_target, 1, NULL);
+    if (vertex_count) {
+        SDL_GPUBufferBinding vertex_binding = {
+            .buffer = render->vertex_buffer,
+        };
         SDL_BindGPUVertexBuffers(pass, 0, &vertex_binding, 1);
+    }
 
     for (uint32_t view_index = 0; view_index < render->view_count; view_index++) {
         SIRenderView *view = &render->views[view_index];
@@ -321,63 +281,38 @@ void sirender_draw_window(ecs_iter_t *it) {
             viewport_width = output_width;
             viewport_height = output_height;
         }
-        SDL_GPUViewport viewport = {
-            .x = viewport_x,
-            .y = viewport_y,
-            .w = viewport_width,
-            .h = viewport_height,
-            .min_depth = 0.0f,
-            .max_depth = 1.0f,
-        };
-        SDL_Rect scissor = {
-            .x = (int)viewport.x,
-            .y = (int)viewport.y,
-            .w = (int)viewport.w,
-            .h = (int)viewport.h,
-        };
+        SDL_GPUViewport viewport = { .x = viewport_x,
+                                     .y = viewport_y,
+                                     .w = viewport_width,
+                                     .h = viewport_height,
+                                     .min_depth = 0.0f,
+                                     .max_depth = 1.0f };
+        SDL_Rect scissor = { .x = (int)viewport.x,
+                             .y = (int)viewport.y,
+                             .w = (int)viewport.w,
+                             .h = (int)viewport.h };
         SDL_SetGPUViewport(pass, &viewport);
         SDL_SetGPUScissor(pass, &scissor);
 
-        uint32_t first = 0;
-        while (first < render->queue.count &&
-               render->queue.commands[first].view_index != view_index)
-            first++;
-        while (first < render->queue.count &&
-               render->queue.commands[first].view_index == view_index) {
-            SIRenderCommand *command = &render->queue.commands[first];
+        for (uint32_t first = 0; first < view->queue.count;) {
+            SIRenderCommand *command = &view->queue.commands[first];
             uint32_t last = first + 1;
-            while (last < render->queue.count &&
-                   render->queue.commands[last].view_index == view_index &&
-                   render->queue.commands[last].layer == command->layer &&
-                   render->queue.commands[last].texture == command->texture &&
-                   render->queue.commands[last].filter == command->filter &&
-                   render->queue.commands[last].blend == command->blend) {
+            while (last < view->queue.count && view->queue.commands[last].layer == command->layer &&
+                   view->queue.commands[last].gpu_texture == command->gpu_texture &&
+                   view->queue.commands[last].filter == command->filter &&
+                   view->queue.commands[last].blend == command->blend) {
                 last++;
             }
 
-            SDL_GPUTexture *texture = NULL;
-            uint32_t texture_width = 0;
-            uint32_t texture_height = 0;
-            SIFilterMode filter = command->filter;
-            if (render->pipelines[command->blend] && siengine_texture_info(
-                                                         command->texture,
-                                                         &texture,
-                                                         &texture_width,
-                                                         &texture_height,
-                                                         &filter
-                                                     )) {
-                SDL_BindGPUGraphicsPipeline(pass, render->pipelines[command->blend]);
-                SDL_BindGPUFragmentSamplers(
-                    pass,
-                    0,
-                    &(SDL_GPUTextureSamplerBinding){
-                        .texture = texture,
-                        .sampler = render->samplers[filter],
-                    },
-                    1
-                );
-                SDL_DrawGPUPrimitives(pass, (last - first) * 6, 1, first * 6, 0);
-            }
+            SDL_BindGPUGraphicsPipeline(pass, render->pipelines[command->blend]);
+            SDL_BindGPUFragmentSamplers(
+                pass,
+                0,
+                &(SDL_GPUTextureSamplerBinding){ .texture = command->gpu_texture,
+                                                 .sampler = render->samplers[command->filter] },
+                1
+            );
+            SDL_DrawGPUPrimitives(pass, (last - first) * 6, 1, view->vertex_offset + first * 6, 0);
             first = last;
         }
     }

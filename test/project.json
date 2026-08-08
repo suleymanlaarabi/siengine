@@ -29,6 +29,14 @@
           "texture_path_uses_asset_root",
           "animation_updates_sprite_frame"
         ]
+      },
+      {
+        "id": "render",
+        "testcases": [
+          "sprite_defaults_are_components",
+          "extracts_once_for_multiple_views",
+          "extracts_sheet_region_and_layer_order"
+        ]
       }
     ]
   },

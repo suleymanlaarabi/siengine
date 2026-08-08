@@ -2,16 +2,44 @@
 #include "siecs.h"
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 void sirender_begin_frame(ecs_iter_t *it) {
-    ecs_resource(SIRenderState)->frame.cmd =
+    ecs_resource(SIRenderState)->cmd =
         SDL_AcquireGPUCommandBuffer(ecs_resource(SIEngineCtx)->primary_gpu);
 }
 
-static inline bool
-sirender_rect_visible(const SIRenderView *view, float x, float y, float width, float height) {
-    float half_width = width * 0.5f;
-    float half_height = height * 0.5f;
+static void ensure_views(SIRenderState *render, uint32_t count) {
+    if (count <= render->view_capacity)
+        return;
+
+    uint32_t previous = render->view_capacity;
+    render->view_capacity = previous ? previous * 2 : 4;
+    while (render->view_capacity < count)
+        render->view_capacity *= 2;
+    render->views = realloc(render->views, render->view_capacity * sizeof(*render->views));
+    memset(
+        render->views + previous,
+        0,
+        (render->view_capacity - previous) * sizeof(*render->views)
+    );
+}
+
+static void ensure_commands(SIRenderQueue *queue) {
+    if (queue->count < queue->capacity)
+        return;
+
+    queue->capacity = queue->capacity ? queue->capacity * 2 : 256;
+    queue->commands = realloc(queue->commands, queue->capacity * sizeof(*queue->commands));
+}
+
+static inline bool sirender_rect_visible(
+    const SIRenderView *view,
+    float x,
+    float y,
+    float half_width,
+    float half_height
+) {
     return x + half_width >= view->left && x - half_width <= view->right &&
            y + half_height >= view->top && y - half_height <= view->bottom;
 }
@@ -20,7 +48,6 @@ void sirender_extract(ecs_iter_t *it) {
     (void)it;
     SIRenderState *render = ecs_resource(SIRenderState);
     render->view_count = 0;
-    render->queue.count = 0;
 
     ecs_iter_t cameras = ecs_query_iter(render->camera_query);
     while (ecs_iter_next(&cameras)) {
@@ -30,142 +57,104 @@ void sirender_extract(ecs_iter_t *it) {
         const SIVirtualResolution *restrict virtual_resolution = ecs_field(&cameras, 3);
 
         for (uint32_t i = 0; i < cameras.count; i++) {
-            if (render->view_count == render->view_capacity) {
-                render->view_capacity = render->view_capacity ? render->view_capacity * 2 : 4;
-                render->views =
-                    realloc(render->views, render->view_capacity * sizeof(*render->views));
-            }
-
+            ensure_views(render, render->view_count + 1);
+            SIRenderView *view = &render->views[render->view_count++];
+            SIRenderQueue queue = view->queue;
             float width = camera[i].viewport_width / camera[i].zoom;
             float height = camera[i].viewport_height / camera[i].zoom;
-            float viewport_x = viewport ? viewport[i].x : 0.0f;
-            float viewport_y = viewport ? viewport[i].y : 0.0f;
-            float viewport_width = viewport && viewport[i].width ? viewport[i].width : 1.0f;
-            float viewport_height = viewport && viewport[i].height ? viewport[i].height : 1.0f;
 
-            render->views[render->view_count++] = (SIRenderView){
+            *view = (SIRenderView){
                 .left = transform[i].x - width * 0.5f,
                 .top = transform[i].y - height * 0.5f,
                 .right = transform[i].x + width * 0.5f,
                 .bottom = transform[i].y + height * 0.5f,
-                .viewport_x = viewport_x,
-                .viewport_y = viewport_y,
-                .viewport_width = viewport_width,
-                .viewport_height = viewport_height,
+                .viewport_x = viewport[i].x,
+                .viewport_y = viewport[i].y,
+                .viewport_width = viewport[i].width,
+                .viewport_height = viewport[i].height,
                 .virtual_width = virtual_resolution ? virtual_resolution[i].width : 0,
                 .virtual_height = virtual_resolution ? virtual_resolution[i].height : 0,
                 .virtual_enabled = virtual_resolution != NULL,
                 .pixel_perfect = virtual_resolution ? virtual_resolution[i].pixel_perfect : false,
+                .queue = queue,
             };
+            view->queue.count = 0;
         }
     }
 
-    for (uint32_t view_index = 0; view_index < render->view_count; view_index++) {
-        SIRenderView *view = &render->views[view_index];
-        ecs_iter_t sprites = ecs_query_iter(render->sprite_query);
+    ecs_iter_t sprites = ecs_query_iter(render->sprite_query);
+    while (ecs_iter_next(&sprites)) {
+        const SISprite *restrict sprite = ecs_field(&sprites, 0);
+        const SIWorldTransform2D *restrict transform = ecs_field(&sprites, 1);
+        const SIColor *restrict colors = ecs_field(&sprites, 2);
+        const SISpriteFlip *restrict flips = ecs_field(&sprites, 3);
+        const SIPivot *restrict pivots = ecs_field(&sprites, 4);
+        const SIBlendMode *restrict blends = ecs_field(&sprites, 5);
+        const SISpriteSheet *restrict sheets = ecs_field(&sprites, 6);
+        const ecs_entity_t layer = ecs_target_shared(&sprites, Layer);
 
-        while (ecs_iter_next(&sprites)) {
-            const SISprite *restrict sprite = ecs_field(&sprites, 0);
-            const SIWorldTransform2D *restrict transform = ecs_field(&sprites, 1);
-            const SIColor *restrict colors = ecs_field(&sprites, 2);
-            const SISpriteFlip *restrict flips = ecs_field(&sprites, 3);
-            const SIPivot *restrict pivots = ecs_field(&sprites, 4);
-            const SIBlendMode *restrict blends = ecs_field(&sprites, 5);
-            const SISpriteSheet *restrict sheets = ecs_field(&sprites, 6);
-            const ecs_entity_t layer = ecs_target_shared(&sprites, Layer);
+        for (uint32_t i = 0; i < sprites.count; i++) {
+            SITextureHandle texture = sprite[i].texture;
+            SITextureSlot *slot = siengine_texture_slot(texture);
+            uint32_t width = slot->width;
+            uint32_t height = slot->height;
+            uint32_t region_x = 0;
+            uint32_t region_y = 0;
 
-            for (uint32_t i = 0; i < sprites.count; i++) {
-                SITextureHandle texture = sprite[i].texture;
-                uint32_t texture_width = 1;
-                uint32_t texture_height = 1;
-                uint32_t width = texture_width;
-                uint32_t height = texture_height;
-                uint32_t region_x = 0;
-                uint32_t region_y = 0;
-                SIFilterMode filter = SI_FILTER_NEAREST;
+            if (sheets) {
+                uint32_t column = sprite[i].frame_index % sheets[i].columns;
+                uint32_t row = sprite[i].frame_index / sheets[i].columns;
+                region_x =
+                    sheets[i].margin_x + column * (sheets[i].frame_width + sheets[i].spacing_x);
+                region_y =
+                    sheets[i].margin_y + row * (sheets[i].frame_height + sheets[i].spacing_y);
+                width = sheets[i].frame_width;
+                height = sheets[i].frame_height;
+            }
 
-                siengine_texture_info(texture, NULL, &texture_width, &texture_height, &filter);
+            float half_width = width * fabsf(transform[i].scale_x) * 0.5f;
+            float half_height = height * fabsf(transform[i].scale_y) * 0.5f;
+            SIRenderCommand command = {
+                .layer = layer,
+                .gpu_texture = slot->gpu,
+                .filter = slot->filter,
+                .blend = blends[i].value,
+                .x = transform[i].x,
+                .y = transform[i].y,
+                .rotation = transform[i].rotation,
+                .scale_x = transform[i].scale_x,
+                .scale_y = transform[i].scale_y,
+                .pivot_x = pivots[i].x,
+                .pivot_y = pivots[i].y,
+                .u0 = (float)region_x / slot->width,
+                .v0 = (float)region_y / slot->height,
+                .u1 = (float)(region_x + width) / slot->width,
+                .v1 = (float)(region_y + height) / slot->height,
+                .width = (float)width,
+                .height = (float)height,
+                .color = colors[i],
+                .flip_x = flips[i].x,
+                .flip_y = flips[i].y,
+            };
 
-                if (sheets) {
-                    uint32_t column = sprite[i].frame_index % sheets[i].columns;
-                    uint32_t row = sprite[i].frame_index / sheets[i].columns;
-                    region_x =
-                        sheets[i].margin_x + column * (sheets[i].frame_width + sheets[i].spacing_x);
-                    region_y =
-                        sheets[i].margin_y + row * (sheets[i].frame_height + sheets[i].spacing_y);
-                    width = sheets[i].frame_width;
-                    height = sheets[i].frame_height;
-                } else {
-                    width = texture_width;
-                    height = texture_height;
-                }
-
-                float pivot_x = pivots ? pivots[i].x : 0.5f;
-                float pivot_y = pivots ? pivots[i].y : 0.5f;
-                float half_width = width * fabsf(transform[i].scale_x) * 0.5f;
-                float half_height = height * fabsf(transform[i].scale_y) * 0.5f;
-
-                if (!sirender_rect_visible(
-                        view,
-                        transform[i].x,
-                        transform[i].y,
-                        half_width * 2.0f,
-                        half_height * 2.0f
-                    )) {
+            for (uint32_t view_index = 0; view_index < render->view_count; view_index++) {
+                SIRenderView *view = &render->views[view_index];
+                if (!sirender_rect_visible(view, command.x, command.y, half_width, half_height))
                     continue;
-                }
 
-                if (render->queue.count == render->queue.capacity) {
-                    render->queue.capacity =
-                        render->queue.capacity ? render->queue.capacity * 2 : 256;
-                    render->queue.commands = realloc(
-                        render->queue.commands,
-                        render->queue.capacity * sizeof(*render->queue.commands)
-                    );
-                }
-
-                SIColor color = colors ? colors[i] : (SIColor){ 1, 1, 1, 1 };
-                render->queue.commands[render->queue.count++] = (SIRenderCommand){
-                    .entity = sprites.entities[i],
-                    .layer = layer,
-                    .view_index = view_index,
-                    .texture = texture,
-                    .filter = filter,
-                    .blend = blends ? blends[i].value : SI_BLEND_NORMAL,
-                    .x = transform[i].x,
-                    .y = transform[i].y,
-                    .rotation = transform[i].rotation,
-                    .scale_x = transform[i].scale_x,
-                    .scale_y = transform[i].scale_y,
-                    .pivot_x = pivot_x,
-                    .pivot_y = pivot_y,
-                    .u0 = (float)region_x / (float)texture_width,
-                    .v0 = (float)region_y / (float)texture_height,
-                    .u1 = (float)(region_x + width) / (float)texture_width,
-                    .v1 = (float)(region_y + height) / (float)texture_height,
-                    .width = (float)width,
-                    .height = (float)height,
-                    .color = color,
-                    .flip_x = flips ? flips[i].x : false,
-                    .flip_y = flips ? flips[i].y : false,
-                };
+                ensure_commands(&view->queue);
+                view->queue.commands[view->queue.count++] = command;
             }
         }
     }
 }
 
 void sirender_end_frame(ecs_iter_t *it) {
-    SIRenderFrame *frame = &ecs_resource(SIRenderState)->frame;
+    SIRenderState *render = ecs_resource(SIRenderState);
 
-    if (!frame->cmd)
+    if (!render->cmd)
         return;
 
-    SDL_SubmitGPUCommandBuffer(frame->cmd);
-    frame->cmd = NULL;
-}
-
-void sirender_frame_shutdown() {
-    SIRenderFrame *frame = &ecs_resource(SIRenderState)->frame;
-
-    frame->cmd = NULL;
+    SDL_SubmitGPUCommandBuffer(render->cmd);
+    render->cmd = NULL;
 }

@@ -10,29 +10,8 @@
 #include <stdint.h>
 
 typedef struct {
-    SDL_GPUCommandBuffer *cmd;
-} SIRenderFrame;
-
-typedef struct {
-    float left;
-    float top;
-    float right;
-    float bottom;
-    float viewport_x;
-    float viewport_y;
-    float viewport_width;
-    float viewport_height;
-    uint32_t virtual_width;
-    uint32_t virtual_height;
-    bool virtual_enabled;
-    bool pixel_perfect;
-} SIRenderView;
-
-typedef struct {
-    ecs_entity_t entity;
     ecs_entity_t layer;
-    uint32_t view_index;
-    SITextureHandle texture;
+    SDL_GPUTexture *gpu_texture;
     SIFilterMode filter;
     SIBlendModeValue blend;
     float x;
@@ -60,17 +39,33 @@ typedef struct {
 } SIRenderQueue;
 
 typedef struct {
+    float left;
+    float top;
+    float right;
+    float bottom;
+    float viewport_x;
+    float viewport_y;
+    float viewport_width;
+    float viewport_height;
+    uint32_t virtual_width;
+    uint32_t virtual_height;
+    bool virtual_enabled;
+    bool pixel_perfect;
+    SIRenderQueue queue;
+    uint32_t vertex_offset;
+} SIRenderView;
+
+typedef struct {
     float x, y;
     float u, v;
     float r, g, b, a;
 } SIRenderVertex;
 
 ECS_RESOURCE_DECLARE(SIRenderState, {
-    SIRenderFrame frame;
+    SDL_GPUCommandBuffer *cmd;
     SIRenderView *views;
     uint32_t view_count;
     uint32_t view_capacity;
-    SIRenderQueue queue;
     SIRenderVertex *vertices;
     uint32_t vertex_count;
     uint32_t vertex_capacity;
@@ -81,7 +76,6 @@ ECS_RESOURCE_DECLARE(SIRenderState, {
     SDL_GPUBuffer *vertex_buffer;
     SDL_GPUTransferBuffer *transfer_buffer;
     uint32_t gpu_vertex_capacity;
-    SDL_GPUTextureFormat pipeline_format;
     ecs_query_id_t camera_query;
     ecs_query_id_t sprite_query;
     ecs_system_id_t extract_system;
@@ -91,7 +85,6 @@ void sirender_begin_frame(ecs_iter_t *it);
 void sirender_extract(ecs_iter_t *it);
 void sirender_end_frame(ecs_iter_t *it);
 void sirender_draw_window(ecs_iter_t *it);
-void sirender_frame_shutdown();
 
 
 #endif
