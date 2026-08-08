@@ -1,10 +1,9 @@
+#include "siecs.h"
 #include "test.h"
 
 ECS_MODULE_DECLARE(siscene2d, {});
 
-static void register_scene2d(void) {
-    ECS_MODULE_IMPORT(siscene2d, {});
-}
+static void register_scene2d(void) { ECS_MODULE_IMPORT(siscene2d, {}); }
 
 void scene2d_transform_adds_world_transform(void) {
     ecs_init();
@@ -12,13 +11,17 @@ void scene2d_transform_adds_world_transform(void) {
 
     ecs_entity_t entity = ecs_new();
     ecs_add(entity, SITransform2D);
-    ecs_set(entity, SITransform2D, {
-        .x = 12.0f,
-        .y = 24.0f,
-        .rotation = 0.5f,
-        .scale_x = 2.0f,
-        .scale_y = 3.0f,
-    });
+    ecs_set(
+        entity,
+        SITransform2D,
+        {
+            .x = 12.0f,
+            .y = 24.0f,
+            .rotation = 0.5f,
+            .scale_x = 2.0f,
+            .scale_y = 3.0f,
+        }
+    );
 
     test_true(ecs_has(entity, SIWorldTransform2D));
 
@@ -38,11 +41,15 @@ void scene2d_camera_requires_transform(void) {
 
     ecs_entity_t camera = ecs_new();
     ecs_add(camera, SICamera2D);
-    ecs_set(camera, SICamera2D, {
-        .zoom = 1.0f,
-        .viewport_width = 320.0f,
-        .viewport_height = 180.0f,
-    });
+    ecs_set(
+        camera,
+        SICamera2D,
+        {
+            .zoom = 1.0f,
+            .viewport_width = 320.0f,
+            .viewport_height = 180.0f,
+        }
+    );
 
     test_true(ecs_has(camera, SITransform2D));
     test_true(ecs_has(camera, SIWorldTransform2D));
@@ -130,12 +137,16 @@ void scene2d_world_transform_follows_parent(void) {
     register_scene2d();
 
     ecs_entity_t parent = ecs_new();
-    ecs_set(parent, SITransform2D, {
-        .x = 10.0f,
-        .y = 20.0f,
-        .scale_x = 2.0f,
-        .scale_y = 3.0f,
-    });
+    ecs_set(
+        parent,
+        SITransform2D,
+        {
+            .x = 10.0f,
+            .y = 20.0f,
+            .scale_x = 2.0f,
+            .scale_y = 3.0f,
+        }
+    );
 
     ecs_entity_t child = ecs_new();
     ecs_set(child, SITransform2D, { .x = 4.0f, .y = 5.0f, .scale_x = 1.0f, .scale_y = 1.0f });
@@ -168,17 +179,19 @@ void scene2d_default_layers_are_ordered(void) {
     ecs_add(ui, SISprite);
     ecs_relate(ui, Layer, SILayerUI);
 
-    ecs_query_id_t query = ecs_query({
-        .terms = { ecs_in(SISprite) },
-        .relations = { ecs_rel(Layer) },
-        .order_by = ecs_order_by_target(Layer),
-    });
+    ecs_query_id_t query = ecs_query(
+        {
+            .terms = { ecs_in(SISprite) },
+            .relations = { ecs_rel(Layer) },
+            .order_by = ecs_order_by_target(Layer),
+        }
+    );
     ecs_iter_t it = ecs_query_iter(query);
     test_true(ecs_iter_next(&it));
-    test_assert(ecs_target_at(&it, Layer, 0) == SILayerBackground);
+    test_assert(ecs_target_shared(&it, Layer) == SILayerBackground);
     test_assert(it.entities[0] == background);
     test_true(ecs_iter_next(&it));
-    test_assert(ecs_target_at(&it, Layer, 0) == SILayerUI);
+    test_assert(ecs_target_shared(&it, Layer) == SILayerUI);
     test_assert(it.entities[0] == ui);
     test_false(ecs_iter_next(&it));
 
@@ -205,16 +218,20 @@ void scene2d_sprite_sheet_describes_grid(void) {
 
     ecs_entity_t sprite = ecs_new();
     ecs_set(sprite, SISprite, { .frame_index = 5 });
-    ecs_set(sprite, SISpriteSheet, {
-        .columns = 4,
-        .rows = 2,
-        .frame_width = 32,
-        .frame_height = 24,
-        .margin_x = 2,
-        .margin_y = 3,
-        .spacing_x = 1,
-        .spacing_y = 2,
-    });
+    ecs_set(
+        sprite,
+        SISpriteSheet,
+        {
+            .columns = 4,
+            .rows = 2,
+            .frame_width = 32,
+            .frame_height = 24,
+            .margin_x = 2,
+            .margin_y = 3,
+            .spacing_x = 1,
+            .spacing_y = 2,
+        }
+    );
 
     SISprite *current = ecs_get(sprite, SISprite);
     SISpriteSheet *sheet = ecs_get(sprite, SISpriteSheet);

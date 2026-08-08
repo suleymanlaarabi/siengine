@@ -4,10 +4,16 @@
 #include <stdlib.h>
 
 void sirender_begin_frame(ecs_iter_t *it) {
-    SIEngineCtx *engine = ecs_resource(SIEngineCtx);
-    SIRenderFrame *frame = &ecs_resource(SIRenderState)->frame;
+    ecs_resource(SIRenderState)->frame.cmd =
+        SDL_AcquireGPUCommandBuffer(ecs_resource(SIEngineCtx)->primary_gpu);
+}
 
-    frame->cmd = SDL_AcquireGPUCommandBuffer(engine->primary_gpu);
+static inline bool
+sirender_rect_visible(const SIRenderView *view, float x, float y, float width, float height) {
+    float half_width = width * 0.5f;
+    float half_height = height * 0.5f;
+    return x + half_width >= view->left && x - half_width <= view->right &&
+           y + half_height >= view->top && y - half_height <= view->bottom;
 }
 
 void sirender_extract(ecs_iter_t *it) {
@@ -18,18 +24,16 @@ void sirender_extract(ecs_iter_t *it) {
 
     ecs_iter_t cameras = ecs_query_iter(render->camera_query);
     while (ecs_iter_next(&cameras)) {
-        SICamera2D *camera = ecs_field(&cameras, 0);
-        SIWorldTransform2D *transform = ecs_field(&cameras, 1);
-        SICameraViewport *viewport = ecs_field(&cameras, 2);
-        SIVirtualResolution *virtual_resolution = ecs_field(&cameras, 3);
+        const SICamera2D *restrict camera = ecs_field(&cameras, 0);
+        const SIWorldTransform2D *restrict transform = ecs_field(&cameras, 1);
+        const SICameraViewport *restrict viewport = ecs_field(&cameras, 2);
+        const SIVirtualResolution *restrict virtual_resolution = ecs_field(&cameras, 3);
 
         for (uint32_t i = 0; i < cameras.count; i++) {
             if (render->view_count == render->view_capacity) {
                 render->view_capacity = render->view_capacity ? render->view_capacity * 2 : 4;
-                render->views = realloc(
-                    render->views,
-                    render->view_capacity * sizeof(*render->views)
-                );
+                render->views =
+                    realloc(render->views, render->view_capacity * sizeof(*render->views));
             }
 
             float width = camera[i].viewport_width / camera[i].zoom;
@@ -61,13 +65,15 @@ void sirender_extract(ecs_iter_t *it) {
         ecs_iter_t sprites = ecs_query_iter(render->sprite_query);
 
         while (ecs_iter_next(&sprites)) {
-            SISprite *sprite = ecs_field(&sprites, 0);
-            SIWorldTransform2D *transform = ecs_field(&sprites, 1);
-            SIColor *colors = ecs_field(&sprites, 2);
-            SISpriteFlip *flips = ecs_field(&sprites, 3);
-            SIPivot *pivots = ecs_field(&sprites, 4);
-            SIBlendMode *blends = ecs_field(&sprites, 5);
-            SISpriteSheet *sheets = ecs_field(&sprites, 6);
+            const SISprite *restrict sprite = ecs_field(&sprites, 0);
+            const SIWorldTransform2D *restrict transform = ecs_field(&sprites, 1);
+            const SIColor *restrict colors = ecs_field(&sprites, 2);
+            const SISpriteFlip *restrict flips = ecs_field(&sprites, 3);
+            const SIPivot *restrict pivots = ecs_field(&sprites, 4);
+            const SIBlendMode *restrict blends = ecs_field(&sprites, 5);
+            const SISpriteSheet *restrict sheets = ecs_field(&sprites, 6);
+            const ecs_entity_t layer = ecs_target_shared(&sprites, Layer);
+
             for (uint32_t i = 0; i < sprites.count; i++) {
                 SITextureHandle texture = sprite[i].texture;
                 uint32_t texture_width = 1;
@@ -78,21 +84,15 @@ void sirender_extract(ecs_iter_t *it) {
                 uint32_t region_y = 0;
                 SIFilterMode filter = SI_FILTER_NEAREST;
 
-                siengine_texture_info(
-                    texture,
-                    NULL,
-                    &texture_width,
-                    &texture_height,
-                    &filter
-                );
+                siengine_texture_info(texture, NULL, &texture_width, &texture_height, &filter);
 
                 if (sheets) {
                     uint32_t column = sprite[i].frame_index % sheets[i].columns;
                     uint32_t row = sprite[i].frame_index / sheets[i].columns;
-                    region_x = sheets[i].margin_x +
-                               column * (sheets[i].frame_width + sheets[i].spacing_x);
-                    region_y = sheets[i].margin_y +
-                               row * (sheets[i].frame_height + sheets[i].spacing_y);
+                    region_x =
+                        sheets[i].margin_x + column * (sheets[i].frame_width + sheets[i].spacing_x);
+                    region_y =
+                        sheets[i].margin_y + row * (sheets[i].frame_height + sheets[i].spacing_y);
                     width = sheets[i].frame_width;
                     height = sheets[i].frame_height;
                 } else {
@@ -102,8 +102,8 @@ void sirender_extract(ecs_iter_t *it) {
 
                 float pivot_x = pivots ? pivots[i].x : 0.5f;
                 float pivot_y = pivots ? pivots[i].y : 0.5f;
-                float half_width = (float)width * fabsf(transform[i].scale_x) * 0.5f;
-                float half_height = (float)height * fabsf(transform[i].scale_y) * 0.5f;
+                float half_width = width * fabsf(transform[i].scale_x) * 0.5f;
+                float half_height = height * fabsf(transform[i].scale_y) * 0.5f;
 
                 if (!sirender_rect_visible(
                         view,
@@ -116,9 +116,8 @@ void sirender_extract(ecs_iter_t *it) {
                 }
 
                 if (render->queue.count == render->queue.capacity) {
-                    render->queue.capacity = render->queue.capacity
-                                                  ? render->queue.capacity * 2
-                                                  : 256;
+                    render->queue.capacity =
+                        render->queue.capacity ? render->queue.capacity * 2 : 256;
                     render->queue.commands = realloc(
                         render->queue.commands,
                         render->queue.capacity * sizeof(*render->queue.commands)
@@ -128,7 +127,7 @@ void sirender_extract(ecs_iter_t *it) {
                 SIColor color = colors ? colors[i] : (SIColor){ 1, 1, 1, 1 };
                 render->queue.commands[render->queue.count++] = (SIRenderCommand){
                     .entity = sprites.entities[i],
-                    .layer = ecs_target_at(&sprites, Layer, i),
+                    .layer = layer,
                     .view_index = view_index,
                     .texture = texture,
                     .filter = filter,

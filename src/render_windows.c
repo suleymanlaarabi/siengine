@@ -226,13 +226,6 @@ static uint32_t build_vertices(SIRenderState *render) {
     return required;
 }
 
-bool sirender_rect_visible(const SIRenderView *view, float x, float y, float width, float height) {
-    float half_width = width * 0.5f;
-    float half_height = height * 0.5f;
-    return x + half_width >= view->left && x - half_width <= view->right &&
-           y + half_height >= view->top && y - half_height <= view->bottom;
-}
-
 void sirender_draw_window(ecs_iter_t *it) {
     SIEngineCtx *engine = ecs_resource(SIEngineCtx);
     SIRenderState *render = ecs_resource(SIRenderState);

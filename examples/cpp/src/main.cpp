@@ -6,7 +6,7 @@ int main(int argc, char *argv[]) {
     ecs::init({ .target_fps = 60 });
 
     ecs::import<siengine>();
-    ecs::import<sirest>();
+    // ecs::import<sirest>();
 
     ecs::set_resource(SIWindow("Hello"));
     ecs::set_resource(SIAssetRoot("../../../../assets"));
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
             .frame_height = 128,
         },
         Velocity{50}
-    );
+    ).relate<Layer>(SILayerActors);
 
     ecs::system()
         .phase(EcsOnUpdate)

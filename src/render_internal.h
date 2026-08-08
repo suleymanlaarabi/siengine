@@ -93,12 +93,5 @@ void sirender_end_frame(ecs_iter_t *it);
 void sirender_draw_window(ecs_iter_t *it);
 void sirender_frame_shutdown();
 
-bool sirender_rect_visible(
-    const SIRenderView *view,
-    float x,
-    float y,
-    float width,
-    float height
-);
 
 #endif
