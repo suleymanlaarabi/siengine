@@ -63,6 +63,8 @@ void render_extracts_once_for_multiple_views(void) {
     test_int(1, render->instances.size);
     test_int(1, sicore_vec_get(&render->batches, 0, SIRenderBatch)->instance_count);
     test_int(texture, sicore_vec_get(&render->batches, 0, SIRenderBatch)->texture);
+    test_true(sicore_vec_get(&render->batches, 0, SIRenderBatch)->pipeline == SI_PIPELINE_SPRITE);
+    test_true(sicore_vec_get(&render->batches, 0, SIRenderBatch)->geometry == SI_GEOMETRY_QUAD);
 
     ecs_fini();
 }
@@ -137,9 +139,15 @@ void render_extracts_colored_shapes(void) {
     SIRenderState *render = ecs_resource(SIRenderState);
     test_int(3, render->batches.size);
     test_int(3, render->instances.size);
-    test_true(sicore_vec_get(&render->batches, 0, SIRenderBatch)->primitive == SI_RENDER_CIRCLE);
-    test_true(sicore_vec_get(&render->batches, 1, SIRenderBatch)->primitive == SI_RENDER_RECTANGLE);
-    test_true(sicore_vec_get(&render->batches, 2, SIRenderBatch)->primitive == SI_RENDER_TRIANGLE);
+    test_true(sicore_vec_get(&render->batches, 0, SIRenderBatch)->pipeline == SI_PIPELINE_CIRCLE);
+    test_true(sicore_vec_get(&render->batches, 0, SIRenderBatch)->geometry == SI_GEOMETRY_QUAD);
+    test_true(sicore_vec_get(&render->batches, 1, SIRenderBatch)->pipeline == SI_PIPELINE_SHAPE);
+    test_true(sicore_vec_get(&render->batches, 1, SIRenderBatch)->geometry == SI_GEOMETRY_QUAD);
+    test_true(sicore_vec_get(&render->batches, 2, SIRenderBatch)->pipeline == SI_PIPELINE_SHAPE);
+    test_true(sicore_vec_get(&render->batches, 2, SIRenderBatch)->geometry == SI_GEOMETRY_TRIANGLE);
+    test_int(0, sicore_vec_get(&render->batches, 0, SIRenderBatch)->instance_offset);
+    test_int(1, sicore_vec_get(&render->batches, 1, SIRenderBatch)->instance_offset);
+    test_int(2, sicore_vec_get(&render->batches, 2, SIRenderBatch)->instance_offset);
     test_true(sicore_vec_get(&render->instances, 0, SIInstance2D)->color.r == 1.0f);
     test_true(sicore_vec_get(&render->instances, 1, SIInstance2D)->color.g == 1.0f);
     test_true(sicore_vec_get(&render->instances, 2, SIInstance2D)->color.b == 1.0f);

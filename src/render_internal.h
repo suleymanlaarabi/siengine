@@ -11,11 +11,17 @@
 #include <stdint.h>
 
 typedef enum {
-    SI_RENDER_SPRITE,
-    SI_RENDER_RECTANGLE,
-    SI_RENDER_CIRCLE,
-    SI_RENDER_TRIANGLE,
-} SIRenderPrimitive;
+    SI_PIPELINE_SPRITE,
+    SI_PIPELINE_SHAPE,
+    SI_PIPELINE_CIRCLE,
+    SI_PIPELINE_COUNT,
+} SIRenderPipeline;
+
+typedef enum {
+    SI_GEOMETRY_QUAD,
+    SI_GEOMETRY_TRIANGLE,
+    SI_GEOMETRY_COUNT,
+} SIRenderGeometry;
 
 typedef struct {
     float x;
@@ -40,7 +46,8 @@ typedef struct {
     uint32_t texture_height;
     SIFilterMode filter;
     SIBlendModeValue blend;
-    SIRenderPrimitive primitive;
+    SIRenderPipeline pipeline;
+    SIRenderGeometry geometry;
     float pivot_x;
     float pivot_y;
     SISpriteSheet sheet;

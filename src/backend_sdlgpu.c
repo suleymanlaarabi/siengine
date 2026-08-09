@@ -19,7 +19,7 @@ typedef struct {
     SDL_GPUShader *sprite_fragment_shader;
     SDL_GPUShader *shape_fragment_shader;
     SDL_GPUShader *circle_fragment_shader;
-    SDL_GPUGraphicsPipeline *pipelines[3][3];
+    SDL_GPUGraphicsPipeline *pipelines[SI_PIPELINE_COUNT][SI_BLEND_COUNT];
     SDL_GPUSampler *samplers[2];
     SDL_GPUBuffer *geometry_buffer;
     SDL_GPUTransferBuffer *geometry_transfer;
@@ -183,12 +183,12 @@ static void ensure_resources(SDL_GPUTextureFormat format) {
         }
     );
 
-    for (uint32_t pipeline = 0; pipeline < 3; pipeline++) {
-        SDL_GPUShader *fragment = pipeline == SI_RENDER_SPRITE
+    for (uint32_t pipeline = 0; pipeline < SI_PIPELINE_COUNT; pipeline++) {
+        SDL_GPUShader *fragment = pipeline == SI_PIPELINE_SPRITE
                                       ? backend.sprite_fragment_shader
-                                      : pipeline == SI_RENDER_CIRCLE ? backend.circle_fragment_shader
-                                                                     : backend.shape_fragment_shader;
-        for (uint32_t blend = 0; blend < 3; blend++)
+                                      : pipeline == SI_PIPELINE_SHAPE ? backend.shape_fragment_shader
+                                                                      : backend.circle_fragment_shader;
+        for (uint32_t blend = 0; blend < SI_BLEND_COUNT; blend++)
             backend.pipelines[pipeline][blend] = create_pipeline(gpu, fragment, format, blend);
     }
 
@@ -241,8 +241,8 @@ void sibackend_init(void) {}
 
 void sibackend_shutdown(void) {
     SDL_GPUDevice *gpu = ecs_get_resource(SIEngineCtx)->primary_gpu;
-    for (uint32_t pipeline = 0; pipeline < 3; pipeline++)
-        for (uint32_t blend = 0; blend < 3; blend++)
+    for (uint32_t pipeline = 0; pipeline < SI_PIPELINE_COUNT; pipeline++)
+        for (uint32_t blend = 0; blend < SI_BLEND_COUNT; blend++)
             SDL_ReleaseGPUGraphicsPipeline(gpu, backend.pipelines[pipeline][blend]);
     SDL_ReleaseGPUShader(gpu, backend.vertex_shader);
     SDL_ReleaseGPUShader(gpu, backend.sprite_fragment_shader);
@@ -336,6 +336,8 @@ static void set_viewport(const SIRenderView *view) {
 }
 
 void sibackend_draw_batch(const void *batch_data, const void *view_data) {
+    static const uint32_t first_vertex[SI_GEOMETRY_COUNT] = { 0, 6 };
+    static const uint32_t vertex_count[SI_GEOMETRY_COUNT] = { 6, 3 };
     const SIRenderBatch *batch = batch_data;
     const SIRenderView *view = view_data;
     SISceneUniform scene = {
@@ -353,8 +355,8 @@ void sibackend_draw_batch(const void *batch_data, const void *view_data) {
     };
     set_viewport(view);
     SDL_PushGPUVertexUniformData(backend.command, 0, &scene, sizeof(scene));
-    SDL_BindGPUGraphicsPipeline(backend.pass, backend.pipelines[batch->primitive][batch->blend]);
-    if (batch->primitive == SI_RENDER_SPRITE) {
+    SDL_BindGPUGraphicsPipeline(backend.pass, backend.pipelines[batch->pipeline][batch->blend]);
+    if (batch->pipeline == SI_PIPELINE_SPRITE) {
         SDL_BindGPUFragmentSamplers(
             backend.pass,
             0,
@@ -367,9 +369,9 @@ void sibackend_draw_batch(const void *batch_data, const void *view_data) {
     }
     SDL_DrawGPUPrimitives(
         backend.pass,
-        batch->primitive == SI_RENDER_TRIANGLE ? 3 : 6,
+        vertex_count[batch->geometry],
         batch->instance_count,
-        batch->primitive == SI_RENDER_TRIANGLE ? 6 : 0,
+        first_vertex[batch->geometry],
         batch->instance_offset
     );
 }

@@ -67,7 +67,8 @@ static void extract_sprite_batch(
     float width = sheet->columns ? (float)sheet->frame_width : (float)texture->width;
     float height = sheet->columns ? (float)sheet->frame_height : (float)texture->height;
 
-    batch->primitive = SI_RENDER_SPRITE;
+    batch->pipeline = SI_PIPELINE_SPRITE;
+    batch->geometry = SI_GEOMETRY_QUAD;
     batch->texture = material->texture;
     batch->gpu_texture = texture->gpu_handle;
     batch->texture_width = texture->width;
@@ -105,7 +106,8 @@ static void extract_circle_batch(
 ) {
     const SIPivot *pivot = ecs_get(batch->material, SIPivot);
     const SIBlendMode *blend = ecs_get(batch->material, SIBlendMode);
-    batch->primitive = SI_RENDER_CIRCLE;
+    batch->pipeline = SI_PIPELINE_CIRCLE;
+    batch->geometry = SI_GEOMETRY_QUAD;
     batch->filter = material->filter;
     batch->blend = blend->value;
     batch->pivot_x = pivot->x;
@@ -135,7 +137,8 @@ static void extract_rectangle_batch(
 ) {
     const SIPivot *pivot = ecs_get(batch->material, SIPivot);
     const SIBlendMode *blend = ecs_get(batch->material, SIBlendMode);
-    batch->primitive = SI_RENDER_RECTANGLE;
+    batch->pipeline = SI_PIPELINE_SHAPE;
+    batch->geometry = SI_GEOMETRY_QUAD;
     batch->filter = material->filter;
     batch->blend = blend->value;
     batch->pivot_x = pivot->x;
@@ -164,7 +167,8 @@ static void extract_triangle_batch(
 ) {
     const SIPivot *pivot = ecs_get(batch->material, SIPivot);
     const SIBlendMode *blend = ecs_get(batch->material, SIBlendMode);
-    batch->primitive = SI_RENDER_TRIANGLE;
+    batch->pipeline = SI_PIPELINE_SHAPE;
+    batch->geometry = SI_GEOMETRY_TRIANGLE;
     batch->filter = material->filter;
     batch->blend = blend->value;
     batch->pivot_x = pivot->x;

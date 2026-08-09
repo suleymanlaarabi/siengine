@@ -36,6 +36,13 @@ int main(void) {
     ecs_set(sprite, SISprite, {});
     ecs_relate(sprite, Layer, SILayerActors);
     ecs_relate(sprite, Material, material);
+    ecs_set(sprite, SITransform2D, { .x = -40.0f, .y = 72.0f });
+
+    ecs_entity_t second_sprite = ecs_new();
+    ecs_set(second_sprite, SISprite, { .frame_index = 1 });
+    ecs_relate(second_sprite, Layer, SILayerActors);
+    ecs_relate(second_sprite, Material, material);
+    ecs_set(second_sprite, SITransform2D, { .x = 40.0f, .y = 72.0f });
 
     ecs_entity_t circle = ecs_new();
     ecs_set(circle, SICircle, { .radius = 24.0f });

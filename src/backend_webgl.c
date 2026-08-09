@@ -14,17 +14,20 @@
 #include <string.h>
 
 typedef struct {
-    GLuint programs[3];
+    GLuint programs[SI_PIPELINE_COUNT];
     GLuint vertex_array;
     GLuint geometry_buffer;
     GLuint instance_buffer;
     uint32_t instance_capacity;
+    uint32_t pixel_width;
+    uint32_t pixel_height;
+    GLuint samplers[SI_FILTER_COUNT];
     bool initialized;
-    GLint camera_uniforms[3];
-    GLint texture_size_uniforms[3];
-    GLint sheet_uniforms[3];
-    GLint sheet_layout_uniforms[3];
-    GLint pivot_uniforms[3];
+    GLint camera_uniforms[SI_PIPELINE_COUNT];
+    GLint texture_size_uniforms[SI_PIPELINE_COUNT];
+    GLint sheet_uniforms[SI_PIPELINE_COUNT];
+    GLint sheet_layout_uniforms[SI_PIPELINE_COUNT];
+    GLint pivot_uniforms[SI_PIPELINE_COUNT];
 } SIBackendState;
 
 static SIBackendState backend;
@@ -48,10 +51,21 @@ static GLuint create_program(const char *fragment_source) {
     return program;
 }
 
+static void bind_instance_offset(uint32_t first_instance) {
+    uintptr_t base = (uintptr_t)first_instance * sizeof(SIInstance2D);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)(base + offsetof(SIInstance2D, x)));
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)(base + offsetof(SIInstance2D, rotation)));
+    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)(base + offsetof(SIInstance2D, scale_x)));
+    glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)(base + offsetof(SIInstance2D, width)));
+    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)(base + offsetof(SIInstance2D, color)));
+    glVertexAttribPointer(6, 1, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)(base + offsetof(SIInstance2D, frame_index)));
+    glVertexAttribPointer(7, 2, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)(base + offsetof(SIInstance2D, flip_x)));
+}
+
 static void backend_init_resources(void) {
-    backend.programs[SI_RENDER_SPRITE] = create_program(sprite_fragment_shader_source);
-    backend.programs[SI_RENDER_RECTANGLE] = create_program(shape_fragment_shader_source);
-    backend.programs[SI_RENDER_CIRCLE] = create_program(circle_fragment_shader_source);
+    backend.programs[SI_PIPELINE_SPRITE] = create_program(sprite_fragment_shader_source);
+    backend.programs[SI_PIPELINE_SHAPE] = create_program(shape_fragment_shader_source);
+    backend.programs[SI_PIPELINE_CIRCLE] = create_program(circle_fragment_shader_source);
     glGenVertexArrays(1, &backend.vertex_array);
     glBindVertexArray(backend.vertex_array);
     static const float geometry[] = {
@@ -67,16 +81,10 @@ static void backend_init_resources(void) {
     glBindBuffer(GL_ARRAY_BUFFER, backend.instance_buffer);
     for (uint32_t i = 1; i < 8; i++)
         glEnableVertexAttribArray(i);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)offsetof(SIInstance2D, x));
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)offsetof(SIInstance2D, rotation));
-    glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)offsetof(SIInstance2D, scale_x));
-    glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)offsetof(SIInstance2D, width));
-    glVertexAttribPointer(5, 4, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)offsetof(SIInstance2D, color));
-    glVertexAttribPointer(6, 1, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)offsetof(SIInstance2D, frame_index));
-    glVertexAttribPointer(7, 2, GL_FLOAT, GL_FALSE, sizeof(SIInstance2D), (void *)offsetof(SIInstance2D, flip_x));
+    bind_instance_offset(0);
     for (uint32_t i = 1; i < 8; i++)
         glVertexAttribDivisor(i, 1);
-    for (uint32_t i = 0; i < 3; i++) {
+    for (uint32_t i = 0; i < SI_PIPELINE_COUNT; i++) {
         glUseProgram(backend.programs[i]);
         backend.camera_uniforms[i] = glGetUniformLocation(backend.programs[i], "camera_bounds");
         backend.texture_size_uniforms[i] = glGetUniformLocation(backend.programs[i], "texture_size");
@@ -84,8 +92,16 @@ static void backend_init_resources(void) {
         backend.sheet_layout_uniforms[i] = glGetUniformLocation(backend.programs[i], "sheet_layout");
         backend.pivot_uniforms[i] = glGetUniformLocation(backend.programs[i], "pivot");
     }
-    glUseProgram(backend.programs[SI_RENDER_SPRITE]);
-    glUniform1i(glGetUniformLocation(backend.programs[SI_RENDER_SPRITE], "sprite_texture"), 0);
+    glUseProgram(backend.programs[SI_PIPELINE_SPRITE]);
+    glUniform1i(glGetUniformLocation(backend.programs[SI_PIPELINE_SPRITE], "sprite_texture"), 0);
+    glGenSamplers(SI_FILTER_COUNT, backend.samplers);
+    for (uint32_t filter = 0; filter < SI_FILTER_COUNT; filter++) {
+        GLint filter_mode = filter == SI_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST;
+        glSamplerParameteri(backend.samplers[filter], GL_TEXTURE_MIN_FILTER, filter_mode);
+        glSamplerParameteri(backend.samplers[filter], GL_TEXTURE_MAG_FILTER, filter_mode);
+        glSamplerParameteri(backend.samplers[filter], GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glSamplerParameteri(backend.samplers[filter], GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    }
     glBindVertexArray(0);
     backend.initialized = true;
 }
@@ -93,12 +109,12 @@ static void backend_init_resources(void) {
 void sibackend_init(void) {}
 
 void sibackend_shutdown(void) {
-    glDeleteProgram(backend.programs[0]);
-    glDeleteProgram(backend.programs[1]);
-    glDeleteProgram(backend.programs[2]);
+    for (uint32_t pipeline = 0; pipeline < SI_PIPELINE_COUNT; pipeline++)
+        glDeleteProgram(backend.programs[pipeline]);
     glDeleteBuffers(1, &backend.geometry_buffer);
     glDeleteBuffers(1, &backend.instance_buffer);
     glDeleteVertexArrays(1, &backend.vertex_array);
+    glDeleteSamplers(SI_FILTER_COUNT, backend.samplers);
     backend = (SIBackendState){};
 }
 
@@ -110,49 +126,68 @@ void sibackend_begin_frame(void) {
     glBindVertexArray(backend.vertex_array);
 }
 
-void sibackend_upload_instances(const void *data, uint32_t count, uint32_t stride) {
+static void ensure_instance_capacity(uint32_t required_count) {
+    if (required_count <= backend.instance_capacity)
+        return;
+
+    uint32_t capacity = backend.instance_capacity ? backend.instance_capacity : 256;
+    while (capacity < required_count)
+        capacity *= 2;
     glBindBuffer(GL_ARRAY_BUFFER, backend.instance_buffer);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)count * stride, data, GL_DYNAMIC_DRAW);
+    glBufferData(
+        GL_ARRAY_BUFFER,
+        (GLsizeiptr)capacity * sizeof(SIInstance2D),
+        NULL,
+        GL_DYNAMIC_DRAW
+    );
+    backend.instance_capacity = capacity;
+}
+
+void sibackend_upload_instances(const void *data, uint32_t count, uint32_t stride) {
     int width;
     int height;
     SDL_GetWindowSizeInPixels(ecs_get_resource(SIEngineCtx)->window, &width, &height);
+    backend.pixel_width = (uint32_t)width;
+    backend.pixel_height = (uint32_t)height;
+    ensure_instance_capacity(count);
+    glBindBuffer(GL_ARRAY_BUFFER, backend.instance_buffer);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, (GLsizeiptr)count * stride, data);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_SCISSOR_TEST);
-    glScissor(0, 0, width, height);
+    glScissor(0, 0, backend.pixel_width, backend.pixel_height);
     glClearColor(0.05f, 0.05f, 0.08f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
 }
 
-static void set_viewport(const SIRenderView *view, uint32_t pixel_width, uint32_t pixel_height) {
-    SIRenderViewport viewport = sirender_viewport_rect(view, pixel_width, pixel_height);
+static void set_viewport(const SIRenderView *view) {
+    SIRenderViewport viewport = sirender_viewport_rect(view, backend.pixel_width, backend.pixel_height);
     glViewport(
         (int)viewport.x,
-        (int)((float)pixel_height - viewport.y - viewport.height),
+        (int)((float)backend.pixel_height - viewport.y - viewport.height),
         (int)viewport.width,
         (int)viewport.height
     );
     glScissor(
         (int)viewport.x,
-        (int)((float)pixel_height - viewport.y - viewport.height),
+        (int)((float)backend.pixel_height - viewport.y - viewport.height),
         (int)viewport.width,
         (int)viewport.height
     );
 }
 
 void sibackend_draw_batch(const void *batch_data, const void *view_data) {
+    static const uint32_t first_vertex[SI_GEOMETRY_COUNT] = { 0, 6 };
+    static const uint32_t vertex_count[SI_GEOMETRY_COUNT] = { 6, 3 };
     const SIRenderBatch *batch = batch_data;
     const SIRenderView *view = view_data;
-    GLuint program = backend.programs[batch->primitive];
-    int width;
-    int height;
-    SDL_GetWindowSizeInPixels(ecs_get_resource(SIEngineCtx)->window, &width, &height);
-    set_viewport(view, width, height);
+    GLuint program = backend.programs[batch->pipeline];
+    set_viewport(view);
     glUseProgram(program);
-    glUniform4f(backend.camera_uniforms[batch->primitive], view->left, view->top, view->right, view->bottom);
-    glUniform4f(backend.texture_size_uniforms[batch->primitive], (float)batch->texture_width, (float)batch->texture_height, 0, 0);
-    glUniform4f(backend.sheet_uniforms[batch->primitive], batch->has_sheet ? (float)batch->sheet.columns : 0, batch->has_sheet ? (float)batch->sheet.rows : 0, batch->has_sheet ? (float)batch->sheet.frame_width : 0, batch->has_sheet ? (float)batch->sheet.frame_height : 0);
-    glUniform4f(backend.sheet_layout_uniforms[batch->primitive], batch->has_sheet ? (float)batch->sheet.margin_x : 0, batch->has_sheet ? (float)batch->sheet.margin_y : 0, batch->has_sheet ? (float)batch->sheet.spacing_x : 0, batch->has_sheet ? (float)batch->sheet.spacing_y : 0);
-    glUniform4f(backend.pivot_uniforms[batch->primitive], batch->pivot_x, batch->pivot_y, 0, 0);
+    glUniform4f(backend.camera_uniforms[batch->pipeline], view->left, view->top, view->right, view->bottom);
+    glUniform4f(backend.texture_size_uniforms[batch->pipeline], (float)batch->texture_width, (float)batch->texture_height, 0, 0);
+    glUniform4f(backend.sheet_uniforms[batch->pipeline], batch->has_sheet ? (float)batch->sheet.columns : 0, batch->has_sheet ? (float)batch->sheet.rows : 0, batch->has_sheet ? (float)batch->sheet.frame_width : 0, batch->has_sheet ? (float)batch->sheet.frame_height : 0);
+    glUniform4f(backend.sheet_layout_uniforms[batch->pipeline], batch->has_sheet ? (float)batch->sheet.margin_x : 0, batch->has_sheet ? (float)batch->sheet.margin_y : 0, batch->has_sheet ? (float)batch->sheet.spacing_x : 0, batch->has_sheet ? (float)batch->sheet.spacing_y : 0);
+    glUniform4f(backend.pivot_uniforms[batch->pipeline], batch->pivot_x, batch->pivot_y, 0, 0);
     glEnable(GL_BLEND);
     if (batch->blend == SI_BLEND_ADDITIVE)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -160,14 +195,16 @@ void sibackend_draw_batch(const void *batch_data, const void *view_data) {
         glBlendFunc(GL_DST_COLOR, GL_ZERO);
     else
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    if (batch->primitive == SI_RENDER_SPRITE) {
+    if (batch->pipeline == SI_PIPELINE_SPRITE) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, (GLuint)batch->gpu_texture);
+        glBindSampler(0, backend.samplers[batch->filter]);
     }
+    bind_instance_offset(batch->instance_offset);
     glDrawArraysInstanced(
         GL_TRIANGLES,
-        batch->primitive == SI_RENDER_TRIANGLE ? 6 : 0,
-        batch->primitive == SI_RENDER_TRIANGLE ? 3 : 6,
+        first_vertex[batch->geometry],
+        vertex_count[batch->geometry],
         batch->instance_count
     );
 }
@@ -177,6 +214,7 @@ void sibackend_end_frame(void) { glBindVertexArray(0); }
 void sibackend_texture_create(const char *path, SIFilterMode filter, void *texture_data) {
     if (!backend.initialized)
         backend_init_resources();
+    (void)filter;
     SITexture *texture = texture_data;
     SDL_Surface *loaded = IMG_Load(path);
     SDL_Surface *surface = SDL_ConvertSurface(loaded, SDL_PIXELFORMAT_RGBA32);
@@ -185,8 +223,6 @@ void sibackend_texture_create(const char *path, SIFilterMode filter, void *textu
     GLuint gpu_texture;
     glGenTextures(1, &gpu_texture);
     glBindTexture(GL_TEXTURE_2D, gpu_texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter == SI_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter == SI_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);

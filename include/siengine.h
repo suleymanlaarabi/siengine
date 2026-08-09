@@ -50,12 +50,14 @@ typedef ecs_entity_t SITextureHandle;
 typedef enum {
     SI_FILTER_NEAREST,
     SI_FILTER_LINEAR,
+    SI_FILTER_COUNT,
 } SIFilterMode;
 
 typedef enum {
     SI_BLEND_NORMAL,
     SI_BLEND_ADDITIVE,
     SI_BLEND_MULTIPLY,
+    SI_BLEND_COUNT,
 } SIBlendModeValue;
 
 ECS_RELATION_DECLARE(Layer);
