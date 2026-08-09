@@ -1,6 +1,12 @@
 #include "siecs.h"
 #include "siecs_rest.h"
 #include "siengine.h"
+#include <format>
+
+
+struct Velocity {
+    float x, y;
+};
 
 int main(int argc, char *argv[]) {
     ecs::init({ .target_fps = 120 });
@@ -11,24 +17,24 @@ int main(int argc, char *argv[]) {
     ecs::set_resource(SIWindow("Hello"));
     ecs::set_resource(SIAssetRoot("../../../../assets"));
 
-
     ecs::entity::create().add<SICamera2D>();
 
-    struct Velocity {
-        float x, y;
-    };
 
-    ecs::entity::create().set(
-        SISprite{ siengine_load_texture("hero.png", SI_FILTER_NEAREST) },
-        SISpriteSheet{
-            .columns = 4,
-            .rows = 1,
-            .frame_width = 128,
-            .frame_height = 128,
-        },
-        Velocity{50},
-        SITransform2D::from_xy(-200, 0)
-    ).relate<Layer>(SILayerActors);
+    auto texture = siengine_load_texture("hero.png", SI_FILTER_NEAREST);
+    for (int i = 0; i < 10; i++) {
+        ecs::entity::create(std::format("hero{}", i).c_str()).set(
+            SISprite{texture},
+            SISpriteSheet{
+                .columns = 4,
+                .rows = 1,
+                .frame_width = 128,
+                .frame_height = 128,
+            },
+            Velocity{50},
+            SITransform2D::from_xy(-200, (i * 25) - 100).with_scale(0.5)
+
+        ).relate<Layer>(SILayerActors);
+    }
 
     auto circle = ecs::entity::create().set(SICircle{24.0f}, SITransform2D::from_xy(-80, 0));
     circle.get<SIColor>() = SIColor{};

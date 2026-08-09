@@ -12,6 +12,7 @@
         "id": "scene2d",
         "testcases": [
           "transform_adds_world_transform",
+          "world_transform_updates_multiple_entities",
           "camera_requires_transform",
           "camera_add_initializes_defaults",
           "query_matches_enabled_cameras",

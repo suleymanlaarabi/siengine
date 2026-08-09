@@ -35,6 +35,40 @@ void scene2d_transform_adds_world_transform(void) {
     ecs_fini();
 }
 
+void scene2d_world_transform_updates_multiple_entities(void) {
+    ecs_init();
+    register_scene2d();
+
+    ecs_entity_t entities[10];
+    for (uint32_t i = 0; i < 10; i++) {
+        entities[i] = ecs_new();
+        ecs_set(
+            entities[i],
+            SITransform2D,
+            {
+                .x = 10.0f + i,
+                .y = 20.0f + i,
+                .rotation = 0.1f * i,
+                .scale_x = 2.0f + i,
+                .scale_y = 3.0f + i,
+            }
+        );
+    }
+
+    ecs_run_phase(EcsPostUpdate);
+
+    for (uint32_t i = 0; i < 10; i++) {
+        SIWorldTransform2D *world = ecs_get(entities[i], SIWorldTransform2D);
+        test_assert(world->x == 10.0f + i);
+        test_assert(world->y == 20.0f + i);
+        test_assert(world->rotation == 0.1f * i);
+        test_assert(world->scale_x == 2.0f + i);
+        test_assert(world->scale_y == 3.0f + i);
+    }
+
+    ecs_fini();
+}
+
 void scene2d_camera_requires_transform(void) {
     ecs_init();
     register_scene2d();

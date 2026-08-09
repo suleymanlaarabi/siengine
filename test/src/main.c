@@ -10,6 +10,7 @@
 
 // Testsuite 'scene2d'
 void scene2d_transform_adds_world_transform(void);
+void scene2d_world_transform_updates_multiple_entities(void);
 void scene2d_camera_requires_transform(void);
 void scene2d_camera_add_initializes_defaults(void);
 void scene2d_query_matches_enabled_cameras(void);
@@ -36,6 +37,10 @@ bake_test_case scene2d_testcases[] = {
     {
         "transform_adds_world_transform",
         scene2d_transform_adds_world_transform
+    },
+    {
+        "world_transform_updates_multiple_entities",
+        scene2d_world_transform_updates_multiple_entities
     },
     {
         "camera_requires_transform",
@@ -119,7 +124,7 @@ static bake_test_suite suites[] = {
         "scene2d",
         NULL,
         NULL,
-        11,
+        12,
         scene2d_testcases
     },
     {

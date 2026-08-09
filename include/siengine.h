@@ -71,6 +71,11 @@ ECS_COMPONENT_DECLARE_CPP(
             transform.y = y;
             return transform;
         }
+        SITransform2D with_scale(float value) {
+            this->scale_x = value;
+            this->scale_y = value;
+            return *this;
+        }
     )
 );
 

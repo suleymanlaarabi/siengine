@@ -128,7 +128,7 @@ static void update_world_transforms_no_parent(ecs_iter_t *it) {
     const SITransform2D *restrict local = ecs_field(it, 0);
     SIWorldTransform2D *restrict world = ecs_field(it, 1);
 
-    memcpy(world, local, sizeof(SITransform2D));
+    memcpy(world, local, it->count * sizeof(*world));
 }
 
 static void update_animations(ecs_iter_t *it) {

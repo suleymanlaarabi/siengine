@@ -1,8 +1,6 @@
 -fvisibility=hidden
 -fPIC
 -g
--fprofile-arcs
--ftest-coverage
 -O0
 -std=c++20
 -Wall
@@ -15,6 +13,6 @@
 -fstack-protector-all
 -DBAKE_PROJECT_ID="siengine.test.cpp"
 -Dsiengine_test_cpp_EXPORTS
--I./include
+-Icpp/include
 -I
 /home/suleyman/bake/include
