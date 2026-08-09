@@ -3,6 +3,10 @@
 #include <SDL3_image/SDL_image.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(__EMSCRIPTEN__)
+#include <GLES3/gl3.h>
+#include <emscripten/html5_webgl.h>
+#endif
 
 #define SI_HANDLE_GENERATION_MASK 0x00ffffffu
 
@@ -80,13 +84,65 @@ static uint32_t alloc_texture_slot(SIAssetStore *assets) {
 
 static SIAssetStore *assets_store(void) { return ecs_try_get_resource(SIAssetStore); }
 
+#if defined(__EMSCRIPTEN__)
+static GLuint load_webgl_texture(const char *path, SIFilterMode filter, int *width, int *height) {
+    SDL_Surface *loaded = IMG_Load(path);
+    SDL_Surface *surface = SDL_ConvertSurface(loaded, SDL_PIXELFORMAT_RGBA32);
+    *width = surface->w;
+    *height = surface->h;
+    SDL_DestroySurface(loaded);
+
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_MIN_FILTER,
+        filter == SI_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST
+    );
+    glTexParameteri(
+        GL_TEXTURE_2D,
+        GL_TEXTURE_MAG_FILTER,
+        filter == SI_FILTER_LINEAR ? GL_LINEAR : GL_NEAREST
+    );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGBA,
+        surface->w,
+        surface->h,
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        surface->pixels
+    );
+    SDL_DestroySurface(surface);
+    return texture;
+}
+#endif
+
 SITextureHandle siengine_load_texture(const char *path, SIFilterMode filter) {
     SIAssetStore *assets = assets_store();
+#if !defined(__EMSCRIPTEN__)
     SIEngineCtx *engine = ecs_get_resource(SIEngineCtx);
+#endif
     char resolved_path[512];
     path = resolve_asset_path(path, resolved_path);
     uint32_t index = alloc_texture_slot(assets);
     SITextureSlot *slot = &assets->textures[index];
+#if defined(__EMSCRIPTEN__)
+    SIEngineCtx *engine = ecs_resource(SIEngineCtx);
+    siwindow_ensure();
+    emscripten_webgl_make_context_current(
+        (EMSCRIPTEN_WEBGL_CONTEXT_HANDLE)(uintptr_t)engine->gl_context
+    );
+    int width = 0;
+    int height = 0;
+    slot->webgl = load_webgl_texture(path, filter, &width, &height);
+#else
     SDL_GPUCommandBuffer *command = SDL_AcquireGPUCommandBuffer(engine->primary_gpu);
     SDL_GPUCopyPass *copy = SDL_BeginGPUCopyPass(command);
     int width = 0;
@@ -107,6 +163,7 @@ SITextureHandle siengine_load_texture(const char *path, SIFilterMode filter) {
     SDL_ReleaseGPUFence(engine->primary_gpu, fence);
 
     slot->gpu = texture;
+#endif
     slot->width = (uint32_t)width;
     slot->height = (uint32_t)height;
     slot->filter = filter;
@@ -120,9 +177,14 @@ SITextureSlot *siengine_texture_slot(SITextureHandle handle) {
 
 static void release_texture_slot(SIAssetStore *assets, uint32_t index) {
     SITextureSlot *slot = &assets->textures[index];
+#if defined(__EMSCRIPTEN__)
+    glDeleteTextures(1, &slot->webgl);
+    slot->webgl = 0;
+#else
     SDL_GPUDevice *gpu = ecs_get_resource(SIEngineCtx)->primary_gpu;
     SDL_ReleaseGPUTexture(gpu, slot->gpu);
     slot->gpu = NULL;
+#endif
     slot->alive = false;
     slot->generation = next_generation(slot->generation);
     slot->next_free = assets->texture_free;

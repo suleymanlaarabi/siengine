@@ -16,10 +16,21 @@ ECS_MODULE_DECLARE(siengine, {});
 
 ECS_RESOURCE_DECLARE_CPP(
     SIWindow,
-    ECS_CPP_FIELDS(char title[128]; uint32_t width; uint32_t height; bool resizable; bool vsync;),
+    ECS_CPP_FIELDS(
+        char title[128];
+        char canvas_id[128];
+        uint32_t width;
+        uint32_t height;
+        bool resizable;
+        bool vsync;
+    ),
     ECS_CPP_METHODS(
-        SIWindow() : title{"Siengine"}, width(1280), height(720), resizable(true), vsync(true) {}
+        SIWindow()
+            : title{"Siengine"}, canvas_id{""}, width(1280), height(720), resizable(true), vsync(true) {}
         SIWindow(const char *window_title) : SIWindow() { std::strcpy(title, window_title); }
+        SIWindow(const char *window_title, const char *window_canvas_id) : SIWindow(window_title) {
+            std::strcpy(canvas_id, window_canvas_id);
+        }
     )
 );
 
@@ -179,6 +190,7 @@ ECS_COMPONENT_DECLARE(SIAnimationTimer, {
 
 SITextureHandle siengine_load_texture(const char *path, SIFilterMode filter);
 void siengine_release_texture(SITextureHandle texture);
+void siengine_run(void);
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,4 @@
 #include "siecs.h"
-#include "siecs_rest.h"
 #include "siengine.h"
 #include <format>
 
@@ -11,10 +10,12 @@ int main(int argc, char *argv[]) {
     ecs::init({ .target_fps = 120 });
 
     ecs::import<siengine>();
-    ecs::import<sirest>();
-
-    ecs::set_resource(SIWindow("Hello"));
+    ecs::set_resource(SIWindow("Hello", "siengine-canvas"));
+#if defined(__EMSCRIPTEN__)
+    ecs::set_resource(SIAssetRoot("/assets"));
+#else
     ecs::set_resource(SIAssetRoot("../../../../assets"));
+#endif
 
     ecs::entity::create().add<SICamera2D>();
 
@@ -33,11 +34,14 @@ int main(int argc, char *argv[]) {
                                  )
                                  .abstract();
 
-    for (int i = 0; i < 10; i++) {
-        ecs::entity::create(std::format("hero{}", i).c_str())
-            .set(SITransform2D::from_xy(-200, (i * 25) - 100).with_scale(0.5))
-            .is_a(PlayerBase);
+    for (int x = 0; x < 200; x++) {
+        for (int i = 0; i < 200; i++) {
+            ecs::entity::create()
+                .set(SITransform2D::from_xy(-200 - x * 2 , (i * 1) - 100).with_scale(0.02))
+                .is_a(PlayerBase);
+        }
     }
+
 
     ecs::system()
         .phase(EcsPreUpdate)
@@ -46,5 +50,5 @@ int main(int argc, char *argv[]) {
             transform.y += vel.y * time->value;
         });
 
-    ecs::run();
+    siengine_run();
 }

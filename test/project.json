@@ -41,6 +41,12 @@
           "extracts_colored_shapes",
           "culls_shapes"
         ]
+      },
+      {
+        "id": "window",
+        "testcases": [
+          "canvas_id_is_stored"
+        ]
       }
     ]
   },

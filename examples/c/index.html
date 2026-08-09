@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Siengine C example</title>
+    <style>
+        html, body { height: 100%; margin: 0; background: #111; }
+        body { display: grid; place-items: center; }
+        canvas { width: min(90vw, 960px); height: min(90vh, 640px); }
+    </style>
+</head>
+<body>
+    <canvas id="siengine-canvas"></canvas>
+    <script>
+        var Module = {
+            canvas: document.getElementById("siengine-canvas")
+        };
+    </script>
+    <script src="example_c"></script>
+</body>
+</html>

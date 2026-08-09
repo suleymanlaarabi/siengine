@@ -1,10 +1,15 @@
 #include "engine_internal.h"
 #include <SDL3/SDL_events.h>
+#include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_gpu.h>
 #include <SDL3/SDL_video.h>
 #include <siengine.h>
 #include <stdint.h>
+#if defined(__EMSCRIPTEN__)
+#include <emscripten/html5_webgl.h>
+#endif
 
+#if !defined(__EMSCRIPTEN__)
 static void configure_swapchain(SIEngineCtx *ctx, SDL_Window *window, const SIWindow *window_desc) {
     SDL_GPUPresentMode present_mode = SDL_GPU_PRESENTMODE_VSYNC;
     if (window_desc->vsync &&
@@ -31,6 +36,9 @@ static void configure_swapchain(SIEngineCtx *ctx, SDL_Window *window, const SIWi
         present_mode
     );
 }
+#endif
+
+static void EnsureWindow(ecs_iter_t *it);
 
 static void on_window_set(const void *new_value) {
     SIEngineCtx *ctx = ecs_resource(SIEngineCtx);
@@ -38,15 +46,20 @@ static void on_window_set(const void *new_value) {
     uint32_t width = window_desc->width ? window_desc->width : 1280;
     uint32_t height = window_desc->height ? window_desc->height : 720;
 
+    if (!ctx->window)
+        return;
+
     if (ctx->window) {
         SDL_SetWindowTitle(ctx->window, window_desc->title);
         SDL_SetWindowResizable(ctx->window, window_desc->resizable);
         SDL_SetWindowSize(ctx->window, (int)width, (int)height);
+#if !defined(__EMSCRIPTEN__)
         configure_swapchain(ctx, ctx->window, window_desc);
+#endif
     }
 }
 
-static void EnsureWindow(ecs_iter_t *it) {
+void siwindow_ensure() {
     SIEngineCtx *ctx = ecs_resource(SIEngineCtx);
     SIWindow *window_desc = ecs_try_get_resource(SIWindow);
 
@@ -57,6 +70,42 @@ static void EnsureWindow(ecs_iter_t *it) {
     uint32_t height = window_desc->height ? window_desc->height : 720;
     SDL_WindowFlags flags = window_desc->resizable ? SDL_WINDOW_RESIZABLE : 0;
 
+#if defined(__EMSCRIPTEN__)
+    SDL_PropertiesID properties = SDL_CreateProperties();
+    SDL_SetStringProperty(properties, SDL_PROP_WINDOW_CREATE_TITLE_STRING, window_desc->title);
+    SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, width);
+    SDL_SetNumberProperty(properties, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, height);
+    SDL_SetNumberProperty(
+        properties,
+        SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER,
+        flags | SDL_WINDOW_OPENGL | SDL_WINDOW_HIGH_PIXEL_DENSITY
+    );
+    char canvas_selector[130] = "#canvas";
+    if (window_desc->canvas_id[0]) {
+        if (window_desc->canvas_id[0] == '#') {
+            SDL_strlcpy(canvas_selector, window_desc->canvas_id, sizeof(canvas_selector));
+        } else {
+            canvas_selector[0] = '#';
+            SDL_strlcpy(canvas_selector + 1, window_desc->canvas_id, sizeof(canvas_selector) - 1);
+        }
+    }
+    SDL_SetStringProperty(
+        properties,
+        SDL_PROP_WINDOW_CREATE_EMSCRIPTEN_CANVAS_ID_STRING,
+        canvas_selector
+    );
+    ctx->window = SDL_CreateWindowWithProperties(properties);
+    SDL_DestroyProperties(properties);
+    EmscriptenWebGLContextAttributes attributes;
+    emscripten_webgl_init_context_attributes(&attributes);
+    attributes.majorVersion = 2;
+    attributes.minorVersion = 0;
+    attributes.enableExtensionsByDefault = true;
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE gl_context =
+        emscripten_webgl_create_context(canvas_selector, &attributes);
+    ctx->gl_context = (SDL_GLContext)(uintptr_t)gl_context;
+    emscripten_webgl_make_context_current(gl_context);
+#else
     ctx->window = SDL_CreateWindow(
         window_desc->title,
         (int)width,
@@ -66,6 +115,12 @@ static void EnsureWindow(ecs_iter_t *it) {
     SDL_ClaimWindowForGPUDevice(ctx->primary_gpu, ctx->window);
 
     configure_swapchain(ctx, ctx->window, window_desc);
+#endif
+}
+
+static void EnsureWindow(ecs_iter_t *it) {
+    (void)it;
+    siwindow_ensure();
 }
 
 static void PollWindowEvents(ecs_iter_t *it) {
@@ -103,7 +158,12 @@ void siwindow_shutdown() {
     SIEngineCtx *ctx = ecs_resource(SIEngineCtx);
 
     if (ctx->window) {
+#if defined(__EMSCRIPTEN__)
+        emscripten_webgl_destroy_context((EMSCRIPTEN_WEBGL_CONTEXT_HANDLE)(uintptr_t)ctx->gl_context);
+        ctx->gl_context = NULL;
+#else
         SDL_ReleaseWindowFromGPUDevice(ctx->primary_gpu, ctx->window);
+#endif
         SDL_DestroyWindow(ctx->window);
         ctx->window = NULL;
     }

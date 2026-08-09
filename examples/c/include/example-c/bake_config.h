@@ -20,7 +20,6 @@
 /* Headers of public dependencies */
 #include <siengine.h>
 #include <siecs.h>
-#include <siecs_rest.h>
 
 #endif
 

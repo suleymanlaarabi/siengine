@@ -15,9 +15,12 @@ void defaults_component_defaults(void) {
     test_str("Hello", window.title);
     test_true(SIWindow{}.width == 1280);
     test_true(SIWindow{}.height == 720);
+    test_str("", SIWindow{}.canvas_id);
     test_true(SIWindow{}.resizable);
     test_true(SIWindow{}.vsync);
     test_str("Siengine", SIWindow{}.title);
+    SIWindow web_window{"Hello", "siengine-canvas"};
+    test_str("siengine-canvas", web_window.canvas_id);
     test_str("./assets", SIAssetRoot{}.path);
 
     test_true(SICamera2D{}.zoom == 1.0f);

@@ -33,6 +33,9 @@ void render_extracts_sheet_region_and_layer_order(void);
 void render_extracts_colored_shapes(void);
 void render_culls_shapes(void);
 
+// Testsuite 'window'
+void window_canvas_id_is_stored(void);
+
 bake_test_case scene2d_testcases[] = {
     {
         "transform_adds_world_transform",
@@ -118,6 +121,13 @@ bake_test_case render_testcases[] = {
     }
 };
 
+bake_test_case window_testcases[] = {
+    {
+        "canvas_id_is_stored",
+        window_canvas_id_is_stored
+    }
+};
+
 
 static bake_test_suite suites[] = {
     {
@@ -140,9 +150,16 @@ static bake_test_suite suites[] = {
         NULL,
         5,
         render_testcases
+    },
+    {
+        "window",
+        NULL,
+        NULL,
+        1,
+        window_testcases
     }
 };
 
 int main(int argc, char *argv[]) {
-    return bake_test_run("siengine.test", argc, argv, suites, 3);
+    return bake_test_run("siengine.test", argc, argv, suites, 4);
 }

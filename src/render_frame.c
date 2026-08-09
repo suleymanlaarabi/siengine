@@ -6,8 +6,12 @@
 #include <string.h>
 
 void sirender_begin_frame(ecs_iter_t *it) {
+#if !defined(__EMSCRIPTEN__)
     ecs_resource(SIRenderState)->cmd =
         SDL_AcquireGPUCommandBuffer(ecs_resource(SIEngineCtx)->primary_gpu);
+#else
+    ecs_resource(SIRenderState)->frame_started = true;
+#endif
 }
 
 static void ensure_views(SIRenderState *render, uint32_t count) {
@@ -216,7 +220,6 @@ void sirender_extract(ecs_iter_t *it) {
                 command.primitive = SI_RENDER_SPRITE;
                 command.pipeline = SI_RENDER_PIPELINE_SPRITE;
                 command.texture = texture;
-                command.gpu_texture = slot->gpu;
                 command.filter = slot->filter;
                 command.pivot_x = pivots[i].x;
                 command.pivot_y = pivots[i].y;
@@ -262,9 +265,13 @@ void sirender_extract(ecs_iter_t *it) {
 void sirender_end_frame(ecs_iter_t *it) {
     SIRenderState *render = ecs_resource(SIRenderState);
 
+#if !defined(__EMSCRIPTEN__)
     if (!render->cmd)
         return;
 
     SDL_SubmitGPUCommandBuffer(render->cmd);
     render->cmd = NULL;
+#else
+    render->frame_started = false;
+#endif
 }

@@ -1,14 +1,15 @@
-#include "siecs_rest.h"
 #include "siengine.h"
 
 int main(void) {
     ecs_with_features({ .target_fps = 60 });
 
     ECS_MODULE_IMPORT(siengine, {});
-    ECS_MODULE_IMPORT(sirest, {});
-
-    ecs_set_resource(SIWindow, { .title = "Hello" });
+    ecs_set_resource(SIWindow, { .title = "Hello", .canvas_id = "siengine-canvas" });
+#if defined(__EMSCRIPTEN__)
+    ecs_set_resource(SIAssetRoot, { .path = "/assets" });
+#else
     ecs_set_resource(SIAssetRoot, { .path = "../../../../assets" });
+#endif
 
     SITextureHandle texture = siengine_load_texture("hero.png", SI_FILTER_NEAREST);
 
@@ -44,6 +45,6 @@ int main(void) {
     ecs_set(triangle, SIColor, { .r = 0.2f, .g = 0.45f, .b = 1.0f, .a = 1.0f });
     ecs_set(triangle, SITransform2D, { .x = 80.0f, .y = 0.0f });
 
-    ecs_run();
+    siengine_run();
     return 0;
 }

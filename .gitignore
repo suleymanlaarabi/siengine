@@ -3,3 +3,4 @@
 .vscode
 gcov
 bin
+compile_flags.txt

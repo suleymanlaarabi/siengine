@@ -10,6 +10,9 @@ void sirender_shutdown() {
 
     ecs_query_fini(render->camera_query);
     ecs_query_fini(render->renderable_query);
+#if defined(__EMSCRIPTEN__)
+    sirender_webgl_shutdown(render);
+#else
     SIEngineCtx *engine = ecs_try_get_resource(SIEngineCtx);
     if (engine && engine->primary_gpu) {
         for (uint32_t i = 0; i < 3; i++) {
@@ -37,13 +40,18 @@ void sirender_shutdown() {
         if (render->transfer_buffer)
             SDL_ReleaseGPUTransferBuffer(engine->primary_gpu, render->transfer_buffer);
     }
+#endif
     for (uint32_t i = 0; i < render->view_capacity; i++)
         free(render->views[i].queue.commands);
     free(render->views);
     free(render->vertices);
     render->views = NULL;
     render->vertices = NULL;
+#if !defined(__EMSCRIPTEN__)
     render->cmd = NULL;
+#else
+    render->frame_started = false;
+#endif
 }
 
 void sirender_register() {

@@ -4,7 +4,7 @@
   "value": {
     "author": "John Doe",
     "description": "A movie theater subscription service for wookies",
-    "use": ["siengine", "siecs", "siecs_rest"]
+    "use": ["siengine", "siecs"]
   },
   "lang.c": {
     "c-standard": "c23"

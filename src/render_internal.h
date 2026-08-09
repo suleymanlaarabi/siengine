@@ -4,7 +4,11 @@
 #include "engine_internal.h"
 #include "assets_internal.h"
 #include "siengine.h"
+#if defined(__EMSCRIPTEN__)
+#include <GLES3/gl3.h>
+#else
 #include <SDL3/SDL_gpu.h>
+#endif
 #include <SDL3/SDL_video.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -26,7 +30,6 @@ typedef struct {
     ecs_entity_t layer;
     ecs_entity_t entity;
     SITextureHandle texture;
-    SDL_GPUTexture *gpu_texture;
     SIFilterMode filter;
     SIBlendModeValue blend;
     SIRenderPrimitive primitive;
@@ -82,13 +85,21 @@ typedef struct {
 } SIRenderVertex;
 
 ECS_RESOURCE_DECLARE(SIRenderState, {
+#if !defined(__EMSCRIPTEN__)
     SDL_GPUCommandBuffer *cmd;
+#else
+    GLuint programs[3];
+    GLuint vertex_array;
+    GLuint vertex_buffer;
+    bool frame_started;
+#endif
     SIRenderView *views;
     uint32_t view_count;
     uint32_t view_capacity;
     SIRenderVertex *vertices;
     uint32_t vertex_count;
     uint32_t vertex_capacity;
+#if !defined(__EMSCRIPTEN__)
     SDL_GPUShader *vertex_shader;
     SDL_GPUShader *sprite_fragment_shader;
     SDL_GPUShader *shape_fragment_shader;
@@ -99,6 +110,7 @@ ECS_RESOURCE_DECLARE(SIRenderState, {
     SDL_GPUSampler *samplers[2];
     SDL_GPUBuffer *vertex_buffer;
     SDL_GPUTransferBuffer *transfer_buffer;
+#endif
     uint32_t gpu_vertex_capacity;
     ecs_query_id_t camera_query;
     ecs_query_id_t renderable_query;
@@ -108,6 +120,10 @@ void sirender_begin_frame(ecs_iter_t *it);
 void sirender_extract(ecs_iter_t *it);
 void sirender_end_frame(ecs_iter_t *it);
 void sirender_draw_window(ecs_iter_t *it);
+uint32_t sirender_build_vertices(SIRenderState *render);
+#if defined(__EMSCRIPTEN__)
+void sirender_webgl_shutdown(SIRenderState *render);
+#endif
 
 
 #endif

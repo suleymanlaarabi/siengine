@@ -71,9 +71,8 @@ void render_extracts_once_for_multiple_views(void) {
     test_int(2, render->view_count);
     test_int(1, render->views[0].queue.count);
     test_int(1, render->views[1].queue.count);
-    test_true(render->views[0].queue.commands[0].gpu_texture != NULL);
-    test_true(render->views[0].queue.commands[0].gpu_texture ==
-              render->views[1].queue.commands[0].gpu_texture);
+    test_int(texture, render->views[0].queue.commands[0].texture);
+    test_int(texture, render->views[1].queue.commands[0].texture);
 
     ecs_fini();
 }

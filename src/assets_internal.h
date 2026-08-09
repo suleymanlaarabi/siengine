@@ -9,6 +9,9 @@
 
 typedef struct {
     SDL_GPUTexture *gpu;
+#if defined(__EMSCRIPTEN__)
+    uint32_t webgl;
+#endif
     uint32_t width;
     uint32_t height;
     uint32_t generation;
