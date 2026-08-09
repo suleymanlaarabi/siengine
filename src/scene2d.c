@@ -82,7 +82,7 @@ ECS_COMPONENT_DEFINE(SISprite, .ops = { .ctor = ecs_ctor_id(SISprite) });
 ECS_COMPONENT_DEFINE(SICircle, .ops = { .ctor = ecs_ctor_id(SICircle) });
 ECS_COMPONENT_DEFINE(SIRectangle, .ops = { .ctor = ecs_ctor_id(SIRectangle) });
 ECS_COMPONENT_DEFINE(SITriangle, .ops = { .ctor = ecs_ctor_id(SITriangle) });
-ECS_COMPONENT_DEFINE(SISpriteSheet);
+ECS_COMPONENT_DEFINE(SISpriteSheet, .inheritance = EcsInheritShared);
 ECS_COMPONENT_DEFINE(SISpriteFlip);
 ECS_COMPONENT_DEFINE(SIPivot, .ops = { .ctor = ecs_ctor_id(SIPivot) });
 ECS_COMPONENT_DEFINE(SIBlendMode, .ops = { .ctor = ecs_ctor_id(SIBlendMode) });

@@ -1,5 +1,6 @@
 #include "render_internal.h"
 #include "siecs.h"
+#include "siengine.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,9 +45,7 @@ static inline bool sirender_rect_visible(
            y + half_height >= view->top && y - half_height <= view->bottom;
 }
 
-static inline int compare_uint64(uint64_t a, uint64_t b) {
-    return a < b ? -1 : a > b ? 1 : 0;
-}
+static inline int compare_uint64(uint64_t a, uint64_t b) { return a < b ? -1 : a > b ? 1 : 0; }
 
 static int compare_commands(const void *left_ptr, const void *right_ptr) {
     const SIRenderCommand *left = left_ptr;
@@ -65,11 +64,8 @@ static int compare_commands(const void *left_ptr, const void *right_ptr) {
     return compare_uint64(left->entity, right->entity);
 }
 
-static inline void command_bounds(
-    const SIRenderCommand *command,
-    float *half_width,
-    float *half_height
-) {
+static inline void
+command_bounds(const SIRenderCommand *command, float *half_width, float *half_height) {
     float scale_x = fabsf(command->scale_x);
     float scale_y = fabsf(command->scale_y);
 
@@ -184,6 +180,8 @@ void sirender_extract(ecs_iter_t *it) {
         const SITriangle *restrict triangles = ecs_field(&renderables, 9);
         const ecs_entity_t layer = ecs_target_shared(&renderables, Layer);
 
+        bool is_sheets_shared = ecs_field_is_shared(&renderables, 6);
+
         for (uint32_t i = 0; i < renderables.count; i++) {
             SIRenderCommand command = {
                 .layer = layer,
@@ -206,14 +204,13 @@ void sirender_extract(ecs_iter_t *it) {
                 uint32_t region_y = 0;
 
                 if (sheets) {
-                    uint32_t column = sprites[i].frame_index % sheets[i].columns;
-                    uint32_t row = sprites[i].frame_index / sheets[i].columns;
-                    region_x = sheets[i].margin_x +
-                               column * (sheets[i].frame_width + sheets[i].spacing_x);
-                    region_y = sheets[i].margin_y +
-                               row * (sheets[i].frame_height + sheets[i].spacing_y);
-                    width = sheets[i].frame_width;
-                    height = sheets[i].frame_height;
+                    const SISpriteSheet *restrict sheet = is_sheets_shared ? sheets : &sheets[i];
+                    uint32_t column = sprites[i].frame_index % sheet->columns;
+                    uint32_t row = sprites[i].frame_index / sheet->columns;
+                    region_x = sheet->margin_x + column * (sheet->frame_width + sheet->spacing_x);
+                    region_y = sheet->margin_y + row * (sheet->frame_height + sheet->spacing_y);
+                    width = sheet->frame_width;
+                    height = sheet->frame_height;
                 }
 
                 command.primitive = SI_RENDER_SPRITE;
@@ -227,8 +224,8 @@ void sirender_extract(ecs_iter_t *it) {
                 command.v0 = (float)region_y / slot->height;
                 command.u1 = (float)(region_x + width) / slot->width;
                 command.v1 = (float)(region_y + height) / slot->height;
-                command.width = (float)width;
-                command.height = (float)height;
+                command.width = width;
+                command.height = height;
                 command.flip_x = flips[i].x;
                 command.flip_y = flips[i].y;
             } else if (circles) {

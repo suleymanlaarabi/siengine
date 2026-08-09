@@ -102,7 +102,16 @@ ECS_COMPONENT_DECLARE(SIVirtualResolution, {
 ECS_COMPONENT_DECLARE_CPP(
     SIColor,
     ECS_CPP_FIELDS(float r; float g; float b; float a;),
-    ECS_CPP_METHODS(SIColor() : r(1), g(1), b(1), a(1) {})
+    ECS_CPP_METHODS(
+        SIColor() : r(1), g(1), b(1), a(1) {}
+        static SIColor from_rgb(float r, float g, float b) {
+            SIColor color;
+            color.r = r;
+            color.g = g;
+            color.b = b;
+            return color;
+        }
+    )
 );
 ECS_COMPONENT_DECLARE_CPP(
     SISprite,
