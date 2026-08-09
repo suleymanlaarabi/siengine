@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
             Velocity{50},
             SITransform2D::from_xy(-200, (i * 25) - 100).with_scale(0.5)
 
-        ).relate<Layer>(SILayerActors);
+        );
     }
 
     auto circle = ecs::entity::create().set(SICircle{24.0f}, SITransform2D::from_xy(-80, 0));

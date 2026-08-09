@@ -10,6 +10,7 @@
 
 // Testsuite 'defaults'
 void defaults_component_defaults(void);
+void defaults_transform_defaults(void);
 void defaults_camera_defaults(void);
 void defaults_sprite_default_layer(void);
 void defaults_sprite_explicit_layer(void);
@@ -19,6 +20,10 @@ bake_test_case defaults_testcases[] = {
     {
         "component_defaults",
         defaults_component_defaults
+    },
+    {
+        "transform_defaults",
+        defaults_transform_defaults
     },
     {
         "camera_defaults",
@@ -44,7 +49,7 @@ static bake_test_suite suites[] = {
         "defaults",
         NULL,
         NULL,
-        5,
+        6,
         defaults_testcases
     }
 };

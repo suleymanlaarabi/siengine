@@ -13,6 +13,7 @@
         "id": "defaults",
         "testcases": [
           "component_defaults",
+          "transform_defaults",
           "camera_defaults",
           "sprite_default_layer",
           "sprite_explicit_layer",

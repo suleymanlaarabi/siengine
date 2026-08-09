@@ -64,7 +64,7 @@ ECS_COMPONENT_DECLARE_CPP(
     SITransform2D,
     ECS_CPP_FIELDS(float x; float y; float rotation; float scale_x; float scale_y;),
     ECS_CPP_METHODS(
-        SITransform2D() : scale_x(1), scale_y(1) {}
+        SITransform2D() : x(0), y(0), rotation(0), scale_x(1), scale_y(1) {}
         static SITransform2D from_xy(float x, float y) {
             SITransform2D transform;
             transform.x = x;
@@ -82,7 +82,7 @@ ECS_COMPONENT_DECLARE_CPP(
 ECS_COMPONENT_DECLARE_CPP(
     SIWorldTransform2D,
     ECS_CPP_FIELDS(float x; float y; float rotation; float scale_x; float scale_y;),
-    ECS_CPP_METHODS(SIWorldTransform2D() : scale_x(1), scale_y(1) {})
+    ECS_CPP_METHODS(SIWorldTransform2D() : x(0), y(0), rotation(0), scale_x(1), scale_y(1) {})
 );
 ECS_COMPONENT_DECLARE_CPP(
     SICamera2D,

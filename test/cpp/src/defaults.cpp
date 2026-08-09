@@ -28,6 +28,13 @@ void defaults_component_defaults(void) {
     test_true(SIVirtualResolution{}.pixel_perfect == false);
     test_true(SITransform2D{}.scale_x == 1.0f);
     test_true(SITransform2D{}.scale_y == 1.0f);
+    test_true(SITransform2D{}.x == 0.0f);
+    test_true(SITransform2D{}.y == 0.0f);
+    test_true(SITransform2D{}.rotation == 0.0f);
+    auto transform = SITransform2D::from_xy(12.0f, 24.0f);
+    test_true(transform.x == 12.0f);
+    test_true(transform.y == 24.0f);
+    test_true(transform.rotation == 0.0f);
     test_true(SIColor{}.r == 1.0f);
     test_true(SIColor{}.g == 1.0f);
     test_true(SIColor{}.b == 1.0f);
@@ -43,6 +50,16 @@ void defaults_component_defaults(void) {
     test_true(SIRectangle{}.height == 1.0f);
     test_true(SITriangle{}.base == 1.0f);
     test_true(SITriangle{}.height == 1.0f);
+}
+
+void defaults_transform_defaults(void) {
+    SITransform2D transform = SITransform2D::from_xy(12.0f, 24.0f);
+
+    test_true(transform.x == 12.0f);
+    test_true(transform.y == 24.0f);
+    test_true(transform.rotation == 0.0f);
+    test_true(transform.scale_x == 1.0f);
+    test_true(transform.scale_y == 1.0f);
 }
 
 void defaults_camera_defaults(void) {

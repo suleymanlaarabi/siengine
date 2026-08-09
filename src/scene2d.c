@@ -35,8 +35,14 @@ static void animation_on_set(
     ecs_get(entity, SISprite)->frame_index = animation->start_index;
 }
 
-ECS_CTOR(SITransform2D, { .scale_x = 1.0f, .scale_y = 1.0f });
-ECS_CTOR(SIWorldTransform2D, { .scale_x = 1.0f, .scale_y = 1.0f });
+ECS_CTOR(
+    SITransform2D,
+    { .x = 0.0f, .y = 0.0f, .rotation = 0.0f, .scale_x = 1.0f, .scale_y = 1.0f }
+);
+ECS_CTOR(
+    SIWorldTransform2D,
+    { .x = 0.0f, .y = 0.0f, .rotation = 0.0f, .scale_x = 1.0f, .scale_y = 1.0f }
+);
 ECS_CTOR(SICameraViewport, { .width = 1.0f, .height = 1.0f });
 ECS_CTOR(
     SICamera2D,
