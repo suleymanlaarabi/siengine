@@ -39,7 +39,6 @@ typedef struct {
 
 typedef struct {
     ecs_entity_t layer;
-    ecs_entity_t material;
     SITextureHandle texture;
     uint64_t gpu_texture;
     uint32_t texture_width;

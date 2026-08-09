@@ -58,12 +58,12 @@ static void extract_sprite_batch(
     const SISprite *sprites,
     const SISpriteFlip *flips,
     const SIMaterial2D *material,
+    const SISpriteSheet *sheet,
+    const SIPivot *pivot,
+    const SIBlendMode *blend,
     const SITexture *texture,
     uint32_t count
 ) {
-    const SISpriteSheet *sheet = ecs_get(batch->material, SISpriteSheet);
-    const SIPivot *pivot = ecs_get(batch->material, SIPivot);
-    const SIBlendMode *blend = ecs_get(batch->material, SIBlendMode);
     float width = sheet->columns ? (float)sheet->frame_width : (float)texture->width;
     float height = sheet->columns ? (float)sheet->frame_height : (float)texture->height;
 
@@ -102,10 +102,10 @@ static void extract_circle_batch(
     const SIColor *colors,
     const SICircle *circles,
     const SIMaterial2D *material,
+    const SIPivot *pivot,
+    const SIBlendMode *blend,
     uint32_t count
 ) {
-    const SIPivot *pivot = ecs_get(batch->material, SIPivot);
-    const SIBlendMode *blend = ecs_get(batch->material, SIBlendMode);
     batch->pipeline = SI_PIPELINE_CIRCLE;
     batch->geometry = SI_GEOMETRY_QUAD;
     batch->filter = material->filter;
@@ -133,10 +133,10 @@ static void extract_rectangle_batch(
     const SIColor *colors,
     const SIRectangle *rectangles,
     const SIMaterial2D *material,
+    const SIPivot *pivot,
+    const SIBlendMode *blend,
     uint32_t count
 ) {
-    const SIPivot *pivot = ecs_get(batch->material, SIPivot);
-    const SIBlendMode *blend = ecs_get(batch->material, SIBlendMode);
     batch->pipeline = SI_PIPELINE_SHAPE;
     batch->geometry = SI_GEOMETRY_QUAD;
     batch->filter = material->filter;
@@ -163,10 +163,10 @@ static void extract_triangle_batch(
     const SIColor *colors,
     const SITriangle *triangles,
     const SIMaterial2D *material,
+    const SIPivot *pivot,
+    const SIBlendMode *blend,
     uint32_t count
 ) {
-    const SIPivot *pivot = ecs_get(batch->material, SIPivot);
-    const SIBlendMode *blend = ecs_get(batch->material, SIBlendMode);
     batch->pipeline = SI_PIPELINE_SHAPE;
     batch->geometry = SI_GEOMETRY_TRIANGLE;
     batch->filter = material->filter;
@@ -236,13 +236,14 @@ void sirender_extract(ecs_iter_t *it) {
         const SICircle *circles = ecs_field(&renderables, 4);
         const SIRectangle *rectangles = ecs_field(&renderables, 5);
         const SITriangle *triangles = ecs_field(&renderables, 6);
-        ecs_entity_t material_entity = ecs_target_shared(&renderables, Material);
-        const SIMaterial2D *material = ecs_get(material_entity, SIMaterial2D);
+        const SIMaterial2D *material = ecs_field(&renderables, 7);
+        const SISpriteSheet *sheet = ecs_field(&renderables, 8);
+        const SIPivot *pivot = ecs_field(&renderables, 9);
+        const SIBlendMode *blend = ecs_field(&renderables, 10);
         const ecs_entity_t layer = ecs_target_shared(&renderables, Layer);
 
         SIRenderBatch *batch = begin_batch(render);
         batch->layer = layer;
-        batch->material = material_entity;
 
         if (sprites) {
             const SITexture *texture = ecs_get(material->texture, SITexture);
@@ -254,6 +255,9 @@ void sirender_extract(ecs_iter_t *it) {
                 sprites,
                 flips,
                 material,
+                sheet,
+                pivot,
+                blend,
                 texture,
                 renderables.count
             );
@@ -265,6 +269,8 @@ void sirender_extract(ecs_iter_t *it) {
                 colors,
                 circles,
                 material,
+                pivot,
+                blend,
                 renderables.count
             );
         } else if (rectangles) {
@@ -275,6 +281,8 @@ void sirender_extract(ecs_iter_t *it) {
                 colors,
                 rectangles,
                 material,
+                pivot,
+                blend,
                 renderables.count
             );
         } else {
@@ -285,6 +293,8 @@ void sirender_extract(ecs_iter_t *it) {
                 colors,
                 triangles,
                 material,
+                pivot,
+                blend,
                 renderables.count
             );
         }

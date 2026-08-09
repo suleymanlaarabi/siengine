@@ -39,10 +39,14 @@ void sirender_register(void) {
             ecs_in_optional(SICircle),
             ecs_in_optional(SIRectangle),
             ecs_in_optional(SITriangle),
+            ecs_up(SIMaterial2D, Material),
+            ecs_up(SISpriteSheet, Material),
+            ecs_up(SIPivot, Material),
+            ecs_up(SIBlendMode, Material),
         },
         .relations = {
-            ecs_rel(Layer),
             ecs_rel(Material),
+            ecs_rel(Layer),
         },
         .order_by = ecs_order_by_target(Layer),
     });

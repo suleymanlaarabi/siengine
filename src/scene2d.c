@@ -14,6 +14,7 @@ ECS_RELATION_DEFINE(
     Material,
     {
         .storage = EcsRelationByTarget,
+        .acyclic = true,
     }
 );
 

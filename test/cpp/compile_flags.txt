@@ -15,6 +15,6 @@
 -fstack-protector-all
 -DBAKE_PROJECT_ID="siengine.test.cpp"
 -Dsiengine_test_cpp_EXPORTS
--Icpp/include
+-I./include
 -I
 /home/suleyman/bake/include
