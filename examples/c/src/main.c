@@ -12,36 +12,49 @@ int main(void) {
 #endif
 
     SITextureHandle texture = siengine_load_texture("hero.png", SI_FILTER_NEAREST);
+    ecs_entity_t material = ecs_new();
+    ecs_set(
+        material,
+        SIMaterial2D,
+        {
+            .texture = texture,
+            .filter = SI_FILTER_NEAREST,
+        }
+    );
+    ecs_set(material, SISpriteSheet, {
+        .columns = 4,
+        .rows = 1,
+        .frame_width = 128,
+        .frame_height = 128,
+    });
 
     ecs_entity_t camera = ecs_new();
     ecs_add(camera, SICamera2D);
     ecs_add(camera, SIVirtualResolution);
 
     ecs_entity_t sprite = ecs_new();
-    ecs_set(sprite, SISprite, { .texture = texture });
-    ecs_set(
-        sprite,
-        SISpriteSheet,
-        {
-            .columns = 4,
-            .rows = 1,
-            .frame_width = 128,
-            .frame_height = 128,
-        }
-    );
+    ecs_set(sprite, SISprite, {});
+    ecs_relate(sprite, Layer, SILayerActors);
+    ecs_relate(sprite, Material, material);
 
     ecs_entity_t circle = ecs_new();
     ecs_set(circle, SICircle, { .radius = 24.0f });
+    ecs_relate(circle, Layer, SILayerActors);
+    ecs_relate(circle, Material, SI2DDefaultMaterial);
     ecs_set(circle, SIColor, { .r = 0.95f, .g = 0.2f, .b = 0.2f, .a = 1.0f });
     ecs_set(circle, SITransform2D, { .x = -80.0f, .y = 0.0f });
 
     ecs_entity_t rectangle = ecs_new();
     ecs_set(rectangle, SIRectangle, { .width = 56.0f, .height = 28.0f });
+    ecs_relate(rectangle, Layer, SILayerActors);
+    ecs_relate(rectangle, Material, SI2DDefaultMaterial);
     ecs_set(rectangle, SIColor, { .r = 0.2f, .g = 0.85f, .b = 0.3f, .a = 1.0f });
     ecs_set(rectangle, SITransform2D, { .x = 0.0f, .y = 0.0f });
 
     ecs_entity_t triangle = ecs_new();
     ecs_set(triangle, SITriangle, { .base = 48.0f, .height = 48.0f });
+    ecs_relate(triangle, Layer, SILayerActors);
+    ecs_relate(triangle, Material, SI2DDefaultMaterial);
     ecs_set(triangle, SIColor, { .r = 0.2f, .g = 0.45f, .b = 1.0f, .a = 1.0f });
     ecs_set(triangle, SITransform2D, { .x = 80.0f, .y = 0.0f });
 

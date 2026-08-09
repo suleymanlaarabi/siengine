@@ -18,13 +18,19 @@ ECS_RESOURCE_DECLARE(SIEngineCtx, {
 
 ECS_MODULE_DECLARE(siscene2d, {});
 ECS_TAG_DECLARE(SIRenderable);
+extern ecs_entity_t SI2DDefaultMaterial;
+
+void sitransform_update_no_parent(ecs_iter_t *it);
+void sitransform_update_parent(ecs_iter_t *it);
+void sianimation_update(ecs_iter_t *it);
 
 void siwindow_register();
-void siwindow_ensure();
 void siassets_register();
-void siassets_shutdown();
 void sirender_register();
 void sirender_shutdown();
 void siwindow_shutdown();
+SIEngineCtx siplatform_init(void);
+void siplatform_shutdown(SIEngineCtx *ctx);
+void siplatform_run(void);
 
 #endif

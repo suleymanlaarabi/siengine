@@ -1,6 +1,8 @@
 -fvisibility=hidden
 -fPIC
 -g
+-fprofile-arcs
+-ftest-coverage
 -O0
 -std=c23
 

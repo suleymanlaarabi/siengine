@@ -43,7 +43,7 @@ ECS_RESOURCE_DECLARE_CPP(
     )
 );
 
-typedef uint64_t SITextureHandle;
+typedef ecs_entity_t SITextureHandle;
 
 #define SI_INVALID_HANDLE UINT64_C(0)
 
@@ -70,6 +70,7 @@ extern ecs_entity_t SILayerForeground;
 extern ecs_entity_t SILayerOverlay;
 extern ecs_entity_t SILayerDebug;
 extern ecs_entity_t SILayerUI;
+extern ecs_entity_t SI2DDefaultMaterial;
 
 ECS_COMPONENT_DECLARE_CPP(
     SITransform2D,
@@ -126,10 +127,9 @@ ECS_COMPONENT_DECLARE_CPP(
 );
 ECS_COMPONENT_DECLARE_CPP(
     SISprite,
-    ECS_CPP_FIELDS(uint64_t texture; uint32_t frame_index;),
+    ECS_CPP_FIELDS(uint32_t frame_index;),
     ECS_CPP_METHODS(
-        SISprite() : texture(SI_INVALID_HANDLE), frame_index(0) {}
-        SISprite(uint64_t sprite_texture) : texture(sprite_texture), frame_index(0) {}
+        SISprite() : frame_index(0) {}
     )
 );
 ECS_COMPONENT_DECLARE_CPP(
@@ -187,6 +187,13 @@ ECS_COMPONENT_DECLARE(SIAnimationTimer, {
     float elapsed;
     bool playing;
 });
+
+ECS_COMPONENT_DECLARE(SIMaterial2D, {
+    uint64_t texture;
+    uint8_t filter;
+});
+
+ECS_RELATION_DECLARE(Material);
 
 SITextureHandle siengine_load_texture(const char *path, SIFilterMode filter);
 void siengine_release_texture(SITextureHandle texture);

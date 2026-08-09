@@ -19,6 +19,7 @@
 
 /* Headers of public dependencies */
 #include <siecs.h>
+#include <sicore.h>
 
 /* Convenience macro for exporting symbols */
 #ifndef siengine_STATIC

@@ -38,7 +38,7 @@ static void configure_swapchain(SIEngineCtx *ctx, SDL_Window *window, const SIWi
 }
 #endif
 
-static void EnsureWindow(ecs_iter_t *it);
+static void create_window(const SIWindow *window_desc);
 
 static void on_window_set(const void *new_value) {
     SIEngineCtx *ctx = ecs_resource(SIEngineCtx);
@@ -46,10 +46,9 @@ static void on_window_set(const void *new_value) {
     uint32_t width = window_desc->width ? window_desc->width : 1280;
     uint32_t height = window_desc->height ? window_desc->height : 720;
 
-    if (!ctx->window)
-        return;
-
-    if (ctx->window) {
+    if (!ctx->window) {
+        create_window(window_desc);
+    } else {
         SDL_SetWindowTitle(ctx->window, window_desc->title);
         SDL_SetWindowResizable(ctx->window, window_desc->resizable);
         SDL_SetWindowSize(ctx->window, (int)width, (int)height);
@@ -59,12 +58,8 @@ static void on_window_set(const void *new_value) {
     }
 }
 
-void siwindow_ensure() {
+static void create_window(const SIWindow *window_desc) {
     SIEngineCtx *ctx = ecs_resource(SIEngineCtx);
-    SIWindow *window_desc = ecs_try_get_resource(SIWindow);
-
-    if (ctx->window || !window_desc)
-        return;
 
     uint32_t width = window_desc->width ? window_desc->width : 1280;
     uint32_t height = window_desc->height ? window_desc->height : 720;
@@ -118,11 +113,6 @@ void siwindow_ensure() {
 #endif
 }
 
-static void EnsureWindow(ecs_iter_t *it) {
-    (void)it;
-    siwindow_ensure();
-}
-
 static void PollWindowEvents(ecs_iter_t *it) {
     SDL_Event e;
 
@@ -138,13 +128,6 @@ ECS_RESOURCE_DEFINE(SIWindow, .on_set = on_window_set);
 
 void siwindow_register() {
     ECS_RESOURCE_REGISTER(SIWindow);
-    ecs_system(
-        {
-            .name = "EnsureWindow",
-            .phase = EcsPreRender,
-            .callback = EnsureWindow,
-        }
-    );
     ecs_system(
         {
             .name = "PollWindowEvents",

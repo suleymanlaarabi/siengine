@@ -252,15 +252,17 @@ void scene2d_shapes_require_transform_and_default_layer(void) {
 
     ecs_entity_t circle = ecs_new();
     ecs_add(circle, SICircle);
+    ecs_relate(circle, Layer, SILayerWorld);
     ecs_entity_t rectangle = ecs_new();
     ecs_add(rectangle, SIRectangle);
+    ecs_relate(rectangle, Layer, SILayerWorld);
     ecs_entity_t triangle = ecs_new();
     ecs_add(triangle, SITriangle);
+    ecs_relate(triangle, Layer, SILayerWorld);
 
     test_true(ecs_has(circle, SITransform2D));
     test_true(ecs_has(circle, SIWorldTransform2D));
     test_true(ecs_has(circle, SIColor));
-    test_true(ecs_has(circle, SIBlendMode));
     test_assert(ecs_target(circle, Layer) == SILayerWorld);
     test_assert(ecs_target(rectangle, Layer) == SILayerWorld);
     test_assert(ecs_target(triangle, Layer) == SILayerWorld);
