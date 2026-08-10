@@ -5,11 +5,12 @@
     "author": "Suleyman Laarabi",
     "description": "siecs based game engine",
     "clangd": true,
-    "use": ["siecs", "sicore"]
+    "use": ["siecs", "sicore", "siphysics"]
   },
   "bundle": {
     "repositories": {
-      "siecs": "https://github.com/suleymanlaarabi/siecs"
+      "siecs": "https://github.com/suleymanlaarabi/siecs",
+      "siphysics": "https://github.com/suleymanlaarabi/siphysics"
     }
   },
   "lang.c": {
