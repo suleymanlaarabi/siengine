@@ -4,7 +4,7 @@
     "value": {
         "author": "Jane Doe",
         "description": "Room sharing for influencers",
-        "use": ["siengine", "siecs"],
+        "use": ["siengine", "siecs", "siphysics"],
         "clangd": true,
         "language": "cpp"
     },

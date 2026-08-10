@@ -1,16 +1,14 @@
 #include "render_internal.h"
 
-ECS_RESOURCE_DEFINE(SIRenderState);
-
-void sirender_shutdown(void) {
-    SIRenderState *render = ecs_resource(SIRenderState);
-    ecs_query_fini(render->camera_query);
-    ecs_query_fini(render->renderable_query);
+static void render_state_on_remove(const void *ptr) {
+    SIRenderState *render = (SIRenderState *)ptr;
     sibackend_shutdown();
     sicore_vec_fini(&render->views);
     sicore_vec_fini(&render->batches);
     sicore_vec_fini(&render->instances);
 }
+
+ECS_RESOURCE_DEFINE(SIRenderState, .on_remove = render_state_on_remove);
 
 void sirender_register(void) {
     ECS_RESOURCE_REGISTER(SIRenderState);

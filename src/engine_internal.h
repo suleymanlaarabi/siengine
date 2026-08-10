@@ -27,8 +27,6 @@ void sianimation_update(ecs_iter_t *it);
 void siwindow_register();
 void siassets_register();
 void sirender_register();
-void sirender_shutdown();
-void siwindow_shutdown();
 SIEngineCtx siplatform_init(void);
 void siplatform_shutdown(SIEngineCtx *ctx);
 void siplatform_run(void);

@@ -124,20 +124,8 @@ static void PollWindowEvents(ecs_iter_t *it) {
     }
 }
 
-ECS_RESOURCE_DEFINE(SIWindow, .on_set = on_window_set);
-
-void siwindow_register() {
-    ECS_RESOURCE_REGISTER(SIWindow);
-    ecs_system(
-        {
-            .name = "PollWindowEvents",
-            .phase = EcsPreRender,
-            .callback = PollWindowEvents,
-        }
-    );
-}
-
-void siwindow_shutdown() {
+static void on_window_remove(const void *value) {
+    (void)value;
     SIEngineCtx *ctx = ecs_resource(SIEngineCtx);
 
     if (ctx->window) {
@@ -150,4 +138,21 @@ void siwindow_shutdown() {
         SDL_DestroyWindow(ctx->window);
         ctx->window = NULL;
     }
+}
+
+ECS_RESOURCE_DEFINE(
+    SIWindow,
+    .on_set = on_window_set,
+    .on_remove = on_window_remove
+);
+
+void siwindow_register() {
+    ECS_RESOURCE_REGISTER(SIWindow);
+    ecs_system(
+        {
+            .name = "PollWindowEvents",
+            .phase = EcsPreRender,
+            .callback = PollWindowEvents,
+        }
+    );
 }

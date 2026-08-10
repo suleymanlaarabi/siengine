@@ -22,6 +22,8 @@
           "default_layers_are_ordered",
           "sprite_requires_transform",
           "shapes_require_transform_and_default_layer",
+          "sprite_gets_default_world_layer",
+          "explicit_layer_overrides_default",
           "sprite_sheet_describes_grid"
         ]
       },
@@ -29,12 +31,14 @@
         "id": "assets",
         "testcases": [
           "texture_path_uses_asset_root",
+          "live_texture_is_released_during_ecs_fini",
           "animation_updates_sprite_frame"
         ]
       },
       {
         "id": "render",
         "testcases": [
+          "queries_are_world_owned_across_cycles",
           "sprite_defaults_are_components",
           "extracts_once_for_multiple_views",
           "extracts_sheet_region_and_layer_order",

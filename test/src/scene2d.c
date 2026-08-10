@@ -1,4 +1,4 @@
-#include "siecs.h"
+#include "../../src/engine_internal.h"
 #include "test.h"
 
 ECS_MODULE_DECLARE(siscene2d, {});
@@ -252,13 +252,10 @@ void scene2d_shapes_require_transform_and_default_layer(void) {
 
     ecs_entity_t circle = ecs_new();
     ecs_add(circle, SICircle);
-    ecs_relate(circle, Layer, SILayerWorld);
     ecs_entity_t rectangle = ecs_new();
     ecs_add(rectangle, SIRectangle);
-    ecs_relate(rectangle, Layer, SILayerWorld);
     ecs_entity_t triangle = ecs_new();
     ecs_add(triangle, SITriangle);
-    ecs_relate(triangle, Layer, SILayerWorld);
 
     test_true(ecs_has(circle, SITransform2D));
     test_true(ecs_has(circle, SIWorldTransform2D));
@@ -271,6 +268,38 @@ void scene2d_shapes_require_transform_and_default_layer(void) {
     test_assert(ecs_get(rectangle, SIRectangle)->height == 1.0f);
     test_assert(ecs_get(triangle, SITriangle)->base == 1.0f);
     test_assert(ecs_get(triangle, SITriangle)->height == 1.0f);
+
+    ecs_fini();
+}
+
+void scene2d_sprite_gets_default_world_layer(void) {
+    ecs_init();
+    register_scene2d();
+
+    ecs_entity_t sprite = ecs_new();
+    ecs_add(sprite, SISprite);
+
+    test_true(ecs_has(sprite, SISprite));
+    test_true(ecs_has(sprite, SIRenderable));
+    test_true(ecs_has(sprite, SITransform2D));
+    test_true(ecs_has(sprite, SIWorldTransform2D));
+    test_true(ecs_has(sprite, SIColor));
+    test_true(ecs_has(sprite, SISpriteFlip));
+    test_true(ecs_target(sprite, Layer) == SILayerWorld);
+
+    ecs_fini();
+}
+
+void scene2d_explicit_layer_overrides_default(void) {
+    ecs_init();
+    register_scene2d();
+
+    ecs_entity_t sprite = ecs_new();
+    ecs_add(sprite, SISprite);
+    test_true(ecs_target(sprite, Layer) == SILayerWorld);
+
+    ecs_relate(sprite, Layer, SILayerUI);
+    test_true(ecs_target(sprite, Layer) == SILayerUI);
 
     ecs_fini();
 }

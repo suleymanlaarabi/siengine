@@ -115,6 +115,5 @@ void sirender_extract(ecs_iter_t *it);
 void sirender_end_frame(ecs_iter_t *it);
 void sirender_draw_window(ecs_iter_t *it);
 void sirender_register(void);
-void sirender_shutdown(void);
 
 #endif

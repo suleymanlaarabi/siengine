@@ -13,6 +13,17 @@ void assets_texture_path_uses_asset_root(void) {
     ecs_fini();
 }
 
+void assets_live_texture_is_released_during_ecs_fini(void) {
+    ecs_init();
+    ECS_MODULE_IMPORT(siengine, {});
+
+    ecs_set_resource(SIAssetRoot, { .path = "../../../assets" });
+    SITextureHandle texture = siengine_load_texture("hero.png", SI_FILTER_NEAREST);
+    test_true(texture != SI_INVALID_HANDLE);
+
+    ecs_fini();
+}
+
 void assets_animation_updates_sprite_frame(void) {
     ecs_init();
     ECS_MODULE_IMPORT(siengine, {});

@@ -20,6 +20,19 @@ static ecs_entity_t make_material(SITextureHandle texture) {
     return material;
 }
 
+void render_queries_are_world_owned_across_cycles(void) {
+    for (uint32_t cycle = 0; cycle < 2; cycle++) {
+        ecs_init();
+        import_engine();
+
+        SIRenderState *render = ecs_resource(SIRenderState);
+        test_true(render->camera_query != 0);
+        test_true(render->renderable_query != 0);
+
+        ecs_fini();
+    }
+}
+
 void render_sprite_defaults_are_components(void) {
     ecs_init();
     import_engine();
@@ -52,7 +65,6 @@ void render_extracts_once_for_multiple_views(void) {
 
     ecs_entity_t visible = ecs_new();
     ecs_add(visible, SISprite);
-    ecs_relate(visible, Layer, SILayerWorld);
     ecs_relate(visible, Material, material);
 
     sirender_extract(NULL);
@@ -121,17 +133,14 @@ void render_extracts_colored_shapes(void) {
     ecs_add(camera, SICamera2D);
     ecs_entity_t circle = ecs_new();
     ecs_set(circle, SICircle, { .radius = 12.0f });
-    ecs_relate(circle, Layer, SILayerWorld);
     ecs_relate(circle, Material, SI2DDefaultMaterial);
     ecs_set(circle, SIColor, { .r = 1.0f, .g = 0.0f, .b = 0.0f, .a = 1.0f });
     ecs_entity_t rectangle = ecs_new();
     ecs_set(rectangle, SIRectangle, { .width = 20.0f, .height = 8.0f });
-    ecs_relate(rectangle, Layer, SILayerWorld);
     ecs_relate(rectangle, Material, SI2DDefaultMaterial);
     ecs_set(rectangle, SIColor, { .r = 0.0f, .g = 1.0f, .b = 0.0f, .a = 1.0f });
     ecs_entity_t triangle = ecs_new();
     ecs_set(triangle, SITriangle, { .base = 18.0f, .height = 24.0f });
-    ecs_relate(triangle, Layer, SILayerWorld);
     ecs_relate(triangle, Material, SI2DDefaultMaterial);
     ecs_set(triangle, SIColor, { .r = 0.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f });
 
@@ -162,11 +171,9 @@ void render_culls_shapes(void) {
     ecs_add(camera, SICamera2D);
     ecs_entity_t visible = ecs_new();
     ecs_set(visible, SICircle, { .radius = 4.0f });
-    ecs_relate(visible, Layer, SILayerWorld);
     ecs_relate(visible, Material, SI2DDefaultMaterial);
     ecs_entity_t hidden = ecs_new();
     ecs_set(hidden, SIRectangle, { .width = 8.0f, .height = 8.0f });
-    ecs_relate(hidden, Layer, SILayerWorld);
     ecs_relate(hidden, Material, SI2DDefaultMaterial);
     ecs_set(hidden, SIWorldTransform2D, { .x = 1000000.0f, .scale_x = 1, .scale_y = 1 });
 

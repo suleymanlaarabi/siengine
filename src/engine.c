@@ -7,9 +7,6 @@ ECS_MODULE_DEFINE(siengine);
 
 static void on_engine_remove(const void *ptr) {
     SIEngineCtx *ctx = (SIEngineCtx *)ptr;
-    siassets_shutdown();
-    sirender_shutdown();
-    siwindow_shutdown();
     siplatform_shutdown(ctx);
 }
 

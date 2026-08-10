@@ -46,15 +46,6 @@ SITextureHandle siengine_load_texture(const char *path, SIFilterMode filter) {
 
 void siengine_release_texture(SITextureHandle texture) { ecs_kill(texture); }
 
-void siassets_shutdown(void) {
-    ecs_query_id_t query = ecs_query({ .terms = { ecs_in(SITexture) } });
-    ecs_iter_t it = ecs_query_iter(query);
-    while (ecs_iter_next(&it))
-        for (uint32_t i = 0; i < it.count; i++)
-            ecs_kill(it.entities[i]);
-    ecs_query_fini(query);
-}
-
 void siassets_register(void) {
     ECS_COMPONENT_REGISTER(SITexture);
     ECS_RESOURCE_REGISTER(SIAssetRoot);

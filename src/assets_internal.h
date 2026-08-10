@@ -12,6 +12,5 @@ ECS_COMPONENT_DECLARE(SITexture, {
 });
 
 void siassets_register(void);
-void siassets_shutdown(void);
 
 #endif

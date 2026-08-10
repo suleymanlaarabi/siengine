@@ -1,15 +1,14 @@
 #include "siecs.h"
 #include "siengine.h"
+#include "siphysics.h"
 #include <format>
 
-struct Velocity {
-    float x, y;
-};
 
 int main(int argc, char *argv[]) {
     ecs::init({ .target_fps = 120 });
 
     ecs::import<siengine>();
+    ecs::import<siphysics>();
     ecs::set_resource(SIWindow("Hello", "siengine-canvas"));
 #if defined(__EMSCRIPTEN__)
     ecs::set_resource(SIAssetRoot("/assets"));
@@ -43,14 +42,6 @@ int main(int argc, char *argv[]) {
                 .relate<Material>(material);
         }
     }
-
-
-    ecs::system()
-        .phase(EcsPreUpdate)
-        .each([](SITransform2D &transform, const Velocity &vel, ecs::res<DeltaTime> time) {
-            transform.x += vel.x * time->value;
-            transform.y += vel.y * time->value;
-        });
 
     siengine_run();
 }

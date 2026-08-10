@@ -32,14 +32,6 @@ ecs_entity_t SI2DDefaultMaterial;
 
 ECS_TAG_DEFINE(SIRenderable);
 
-static void renderable_layer_on_add(ecs_observer_event_t *event) {
-    if (ecs_has_relation(event->entity, Layer))
-        return;
-    ecs_defer_begin();
-    ecs_relate(event->entity, Layer, SILayerWorld);
-    ecs_defer_end();
-}
-
 ECS_CTOR(SIColor, { 1, 1, 1, 1 });
 ECS_CTOR(SISprite, { .frame_index = 0 });
 ECS_CTOR(SICircle, { .radius = 1.0f });
@@ -112,6 +104,7 @@ void siscene2d_import(const siscene2d_props_t *props) {
     SILayerDebug = create_layer("Debug");
     SILayerUI = create_layer("UI");
 
+    ecs_with_relation(SIRenderable, Layer, SILayerWorld);
     ecs_with(SIMaterial2D, SISpriteSheet, SIPivot, SIBlendMode);
 
     SI2DDefaultMaterial = ecs_new();
@@ -131,12 +124,6 @@ void siscene2d_import(const siscene2d_props_t *props) {
     ecs_with(SIRectangle, SITransform2D, SIColor, SIRenderable);
     ecs_with(SITriangle, SITransform2D, SIColor, SIRenderable);
     ecs_with(SIAnimation, SISprite, SIAnimationTimer);
-
-    ecs_observer({
-        .on = EcsOnAdd,
-        .query = { .terms = { ecs_filter(SIRenderable) } },
-        .callback = renderable_layer_on_add,
-    });
 
     ecs_system_id_t update_no_parent = ecs_system({
         .name = "UpdateWorldTransformsWithoutParent",
