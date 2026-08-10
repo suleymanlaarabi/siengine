@@ -9,24 +9,29 @@
 #include <test.h>
 
 // Testsuite 'scene2d'
-void scene2d_transform_adds_world_transform(void);
+void scene2d_world_transform_adds_spatial_components(void);
+void scene2d_imports_siphysics_automatically(void);
 void scene2d_world_transform_updates_multiple_entities(void);
-void scene2d_camera_requires_transform(void);
+void scene2d_camera_requires_spatial_components(void);
 void scene2d_camera_add_initializes_defaults(void);
 void scene2d_query_matches_enabled_cameras(void);
 void scene2d_virtual_resolution_add_initializes_defaults(void);
 void scene2d_child_of_keeps_native_parent_relation(void);
 void scene2d_world_transform_follows_parent(void);
 void scene2d_default_layers_are_ordered(void);
-void scene2d_sprite_requires_transform(void);
+void scene2d_sprite_requires_spatial_components(void);
 void scene2d_shapes_require_transform_and_default_layer(void);
+void scene2d_sprite_gets_default_world_layer(void);
+void scene2d_explicit_layer_overrides_default(void);
 void scene2d_sprite_sheet_describes_grid(void);
 
 // Testsuite 'assets'
 void assets_texture_path_uses_asset_root(void);
+void assets_live_texture_is_released_during_ecs_fini(void);
 void assets_animation_updates_sprite_frame(void);
 
 // Testsuite 'render'
+void render_queries_are_world_owned_across_cycles(void);
 void render_sprite_defaults_are_components(void);
 void render_extracts_once_for_multiple_views(void);
 void render_extracts_sheet_region_and_layer_order(void);
@@ -38,16 +43,20 @@ void window_canvas_id_is_stored(void);
 
 bake_test_case scene2d_testcases[] = {
     {
-        "transform_adds_world_transform",
-        scene2d_transform_adds_world_transform
+        "world_transform_adds_spatial_components",
+        scene2d_world_transform_adds_spatial_components
+    },
+    {
+        "imports_siphysics_automatically",
+        scene2d_imports_siphysics_automatically
     },
     {
         "world_transform_updates_multiple_entities",
         scene2d_world_transform_updates_multiple_entities
     },
     {
-        "camera_requires_transform",
-        scene2d_camera_requires_transform
+        "camera_requires_spatial_components",
+        scene2d_camera_requires_spatial_components
     },
     {
         "camera_add_initializes_defaults",
@@ -74,12 +83,20 @@ bake_test_case scene2d_testcases[] = {
         scene2d_default_layers_are_ordered
     },
     {
-        "sprite_requires_transform",
-        scene2d_sprite_requires_transform
+        "sprite_requires_spatial_components",
+        scene2d_sprite_requires_spatial_components
     },
     {
         "shapes_require_transform_and_default_layer",
         scene2d_shapes_require_transform_and_default_layer
+    },
+    {
+        "sprite_gets_default_world_layer",
+        scene2d_sprite_gets_default_world_layer
+    },
+    {
+        "explicit_layer_overrides_default",
+        scene2d_explicit_layer_overrides_default
     },
     {
         "sprite_sheet_describes_grid",
@@ -93,12 +110,20 @@ bake_test_case assets_testcases[] = {
         assets_texture_path_uses_asset_root
     },
     {
+        "live_texture_is_released_during_ecs_fini",
+        assets_live_texture_is_released_during_ecs_fini
+    },
+    {
         "animation_updates_sprite_frame",
         assets_animation_updates_sprite_frame
     }
 };
 
 bake_test_case render_testcases[] = {
+    {
+        "queries_are_world_owned_across_cycles",
+        render_queries_are_world_owned_across_cycles
+    },
     {
         "sprite_defaults_are_components",
         render_sprite_defaults_are_components
@@ -134,21 +159,21 @@ static bake_test_suite suites[] = {
         "scene2d",
         NULL,
         NULL,
-        12,
+        15,
         scene2d_testcases
     },
     {
         "assets",
         NULL,
         NULL,
-        2,
+        3,
         assets_testcases
     },
     {
         "render",
         NULL,
         NULL,
-        5,
+        6,
         render_testcases
     },
     {

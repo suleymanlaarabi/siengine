@@ -1,14 +1,11 @@
 #include "siecs.h"
 #include "siengine.h"
-#include "siphysics.h"
 #include <format>
-
 
 int main(int argc, char *argv[]) {
     ecs::init({ .target_fps = 120 });
 
     ecs::import<siengine>();
-    ecs::import<siphysics>();
     ecs::set_resource(SIWindow("Hello", "siengine-canvas"));
 #if defined(__EMSCRIPTEN__)
     ecs::set_resource(SIAssetRoot("/assets"));
@@ -18,30 +15,24 @@ int main(int argc, char *argv[]) {
 
     ecs::entity::create().add<SICamera2D>();
 
-    auto texture = siengine_load_texture("hero.png", SI_FILTER_NEAREST);
-    SIMaterial2D material_desc{};
-    material_desc.texture = texture;
-    material_desc.filter = SI_FILTER_NEAREST;
-    auto material = ecs::entity::create()
-                        .set(material_desc)
-                        .set(SISpriteSheet{ 4, 1, 128, 128, 0, 0, 0, 0 });
+    ecs::entity::create()
+        .add<Dynamic>()
+        .set(
+            SIColor::from_rgb(255, 0, 0),
+            SICircle(5.),
+            Position{ 0, 100 },
+            CircleCollider{ .radius = 2 }
+        )
+        .relate<Material>(SI2DDefaultMaterial);
 
-    ecs::entity PlayerBase = ecs::entity::create()
-                                 .set(
-                                     SISprite{},
-                                     Velocity{ 50 }
-                                 )
-                                 .abstract();
-
-    for (int x = 0; x < 200; x++) {
-        for (int i = 0; i < 200; i++) {
-            ecs::entity::create()
-                .set(SITransform2D::from_xy(-200 - x * 2, i - 100).with_scale(0.02f))
-                .is_a(PlayerBase)
-                .relate<Layer>(SILayerActors)
-                .relate<Material>(material);
-        }
-    }
-
+    ecs::entity::create()
+        .add<Static>()
+        .set(
+            SIColor::from_rgb(0, 200, 0),
+            SIRectangle{ 50, 3 },
+            BoxCollider{ 50, 3 },
+            Position{ 0, -25 }
+        )
+        .relate<Material>(SI2DDefaultMaterial);
     siengine_run();
 }

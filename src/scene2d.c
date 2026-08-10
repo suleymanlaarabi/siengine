@@ -1,6 +1,7 @@
 #include "engine_internal.h"
 #include "siecs.h"
 #include "siengine.h"
+#include "siphysics.h"
 #include <string.h>
 
 ECS_MODULE_DEFINE(siscene2d);
@@ -68,11 +69,13 @@ static ecs_entity_t create_layer(const char *name) {
 }
 
 void siscene2d_import(const siscene2d_props_t *props) {
+    ECS_MODULE_IMPORT(siphysics, {});
+
     ECS_RELATION_REGISTER(Layer);
     ECS_RELATION_REGISTER(Material);
     ECS_COMPONENT_REGISTER(
         SIRenderable,
-        SITransform2D,
+        SIScale2D,
         SIWorldTransform2D,
         SICamera2D,
         SICameraViewport,
@@ -117,12 +120,12 @@ void siscene2d_import(const siscene2d_props_t *props) {
         }
     );
 
-    ecs_with(SITransform2D, SIWorldTransform2D);
-    ecs_with(SICamera2D, SITransform2D, SICameraViewport);
-    ecs_with(SISprite, SITransform2D, SIColor, SISpriteFlip, SIRenderable);
-    ecs_with(SICircle, SITransform2D, SIColor, SIRenderable);
-    ecs_with(SIRectangle, SITransform2D, SIColor, SIRenderable);
-    ecs_with(SITriangle, SITransform2D, SIColor, SIRenderable);
+    ecs_with(SIWorldTransform2D, Position, Rotation, SIScale2D);
+    ecs_with(SICamera2D, SIWorldTransform2D, SICameraViewport);
+    ecs_with(SISprite, SIWorldTransform2D, SIColor, SISpriteFlip, SIRenderable);
+    ecs_with(SICircle, SIWorldTransform2D, SIColor, SIRenderable);
+    ecs_with(SIRectangle, SIWorldTransform2D, SIColor, SIRenderable);
+    ecs_with(SITriangle, SIWorldTransform2D, SIColor, SIRenderable);
     ecs_with(SIAnimation, SISprite, SIAnimationTimer);
 
     ecs_system_id_t update_no_parent = ecs_system({
@@ -131,7 +134,9 @@ void siscene2d_import(const siscene2d_props_t *props) {
         .callback = sitransform_update_no_parent,
         .query = {
             .terms = {
-                ecs_in(SITransform2D),
+                ecs_in(Position),
+                ecs_in(Rotation),
+                ecs_in(SIScale2D),
                 ecs_out(SIWorldTransform2D),
             },
             .relations = {
@@ -147,8 +152,10 @@ void siscene2d_import(const siscene2d_props_t *props) {
         .after = { update_no_parent },
         .query = {
             .terms = {
-                ecs_in(SITransform2D),
-                ecs_out(SIWorldTransform2D)
+                ecs_in(Position),
+                ecs_in(Rotation),
+                ecs_in(SIScale2D),
+                ecs_out(SIWorldTransform2D),
             },
             .relations = {
                 ecs_rel(ChildOf),

@@ -29,15 +29,10 @@ void defaults_component_defaults(void) {
     test_true(SIVirtualResolution{}.width == 0);
     test_true(SIVirtualResolution{}.height == 0);
     test_true(SIVirtualResolution{}.pixel_perfect == false);
-    test_true(SITransform2D{}.scale_x == 1.0f);
-    test_true(SITransform2D{}.scale_y == 1.0f);
-    test_true(SITransform2D{}.x == 0.0f);
-    test_true(SITransform2D{}.y == 0.0f);
-    test_true(SITransform2D{}.rotation == 0.0f);
-    auto transform = SITransform2D::from_xy(12.0f, 24.0f);
-    test_true(transform.x == 12.0f);
-    test_true(transform.y == 24.0f);
-    test_true(transform.rotation == 0.0f);
+    test_true(SIScale2D{}.x == 1.0f);
+    test_true(SIScale2D{}.y == 1.0f);
+    test_true(SIScale2D{2.0f}.x == 2.0f);
+    test_true(SIScale2D{2.0f}.y == 2.0f);
     test_true(SIColor{}.r == 1.0f);
     test_true(SIColor{}.g == 1.0f);
     test_true(SIColor{}.b == 1.0f);
@@ -55,14 +50,11 @@ void defaults_component_defaults(void) {
     test_true(SITriangle{}.height == 1.0f);
 }
 
-void defaults_transform_defaults(void) {
-    SITransform2D transform = SITransform2D::from_xy(12.0f, 24.0f);
+void defaults_scale_defaults(void) {
+    SIScale2D scale{2.0f};
 
-    test_true(transform.x == 12.0f);
-    test_true(transform.y == 24.0f);
-    test_true(transform.rotation == 0.0f);
-    test_true(transform.scale_x == 1.0f);
-    test_true(transform.scale_y == 1.0f);
+    test_true(scale.x == 2.0f);
+    test_true(scale.y == 2.0f);
 }
 
 void defaults_camera_defaults(void) {
@@ -72,14 +64,16 @@ void defaults_camera_defaults(void) {
     auto camera = ecs::entity::create().add<SICamera2D>();
 
     test_true(camera.has<SICamera2D>());
-    test_true(camera.has<SITransform2D>());
+    test_true(camera.has<Position>());
+    test_true(camera.has<Rotation>());
+    test_true(camera.has<SIScale2D>());
     test_true(camera.has<SIWorldTransform2D>());
     test_true(camera.has<SICameraViewport>());
     test_true(camera.get<SICamera2D>().zoom == 1.0f);
     test_true(camera.get<SICamera2D>().viewport_width == 320.0f);
     test_true(camera.get<SICamera2D>().viewport_height == 180.0f);
-    test_true(camera.get<SITransform2D>().scale_x == 1.0f);
-    test_true(camera.get<SITransform2D>().scale_y == 1.0f);
+    test_true(camera.get<SIScale2D>().x == 1.0f);
+    test_true(camera.get<SIScale2D>().y == 1.0f);
     test_true(camera.get<SICameraViewport>().width == 1.0f);
     test_true(camera.get<SICameraViewport>().height == 1.0f);
 
@@ -97,7 +91,9 @@ void defaults_sprite_default_layer(void) {
 
     auto sprite = ecs::entity::create().set(SISprite{});
 
-    test_true(sprite.has<SITransform2D>());
+    test_true(sprite.has<Position>());
+    test_true(sprite.has<Rotation>());
+    test_true(sprite.has<SIScale2D>());
     test_true(sprite.has<SIWorldTransform2D>());
     test_int(SILayerWorld, sprite.target<Layer>().id());
 

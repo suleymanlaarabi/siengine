@@ -75,21 +75,12 @@ extern ecs_entity_t SILayerUI;
 extern ecs_entity_t SI2DDefaultMaterial;
 
 ECS_COMPONENT_DECLARE_CPP(
-    SITransform2D,
-    ECS_CPP_FIELDS(float x; float y; float rotation; float scale_x; float scale_y;),
+    SIScale2D,
+    ECS_CPP_FIELDS(float x; float y;),
     ECS_CPP_METHODS(
-        SITransform2D() : x(0), y(0), rotation(0), scale_x(1), scale_y(1) {}
-        static SITransform2D from_xy(float x, float y) {
-            SITransform2D transform;
-            transform.x = x;
-            transform.y = y;
-            return transform;
-        }
-        SITransform2D with_scale(float value) {
-            this->scale_x = value;
-            this->scale_y = value;
-            return *this;
-        }
+        SIScale2D() : x(1.0f), y(1.0f) {}
+        explicit SIScale2D(float value) : x(value), y(value) {}
+        SIScale2D(float x_value, float y_value) : x(x_value), y(y_value) {}
     )
 );
 

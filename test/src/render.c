@@ -175,8 +175,9 @@ void render_culls_shapes(void) {
     ecs_entity_t hidden = ecs_new();
     ecs_set(hidden, SIRectangle, { .width = 8.0f, .height = 8.0f });
     ecs_relate(hidden, Material, SI2DDefaultMaterial);
-    ecs_set(hidden, SIWorldTransform2D, { .x = 1000000.0f, .scale_x = 1, .scale_y = 1 });
+    ecs_set(hidden, Position, { .x = 1000000.0f, .y = 0.0f });
 
+    ecs_run_phase(EcsPostUpdate);
     sirender_extract(NULL);
     test_int(1, ecs_resource(SIRenderState)->instances.size);
     test_int(1, ecs_resource(SIRenderState)->batches.size);

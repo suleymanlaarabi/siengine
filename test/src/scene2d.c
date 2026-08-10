@@ -5,32 +5,51 @@ ECS_MODULE_DECLARE(siscene2d, {});
 
 static void register_scene2d(void) { ECS_MODULE_IMPORT(siscene2d, {}); }
 
-void scene2d_transform_adds_world_transform(void) {
+void scene2d_world_transform_adds_spatial_components(void) {
     ecs_init();
     register_scene2d();
 
     ecs_entity_t entity = ecs_new();
-    ecs_add(entity, SITransform2D);
-    ecs_set(
-        entity,
-        SITransform2D,
-        {
-            .x = 12.0f,
-            .y = 24.0f,
-            .rotation = 0.5f,
-            .scale_x = 2.0f,
-            .scale_y = 3.0f,
-        }
-    );
+    ecs_add(entity, SIWorldTransform2D);
 
+    test_true(ecs_has(entity, Position));
+    test_true(ecs_has(entity, Rotation));
+    test_true(ecs_has(entity, SIScale2D));
     test_true(ecs_has(entity, SIWorldTransform2D));
 
-    SITransform2D *local = ecs_get(entity, SITransform2D);
-    test_assert(local->x == 12.0f);
-    test_assert(local->y == 24.0f);
-    test_assert(local->rotation == 0.5f);
-    test_assert(local->scale_x == 2.0f);
-    test_assert(local->scale_y == 3.0f);
+    test_assert(ecs_get(entity, Position)->x == 0.0f);
+    test_assert(ecs_get(entity, Position)->y == 0.0f);
+    test_assert(ecs_get(entity, Rotation)->angle == 0.0f);
+    test_assert(ecs_get(entity, SIScale2D)->x == 1.0f);
+    test_assert(ecs_get(entity, SIScale2D)->y == 1.0f);
+
+    ecs_set(entity, Position, { .x = 12.0f, .y = 24.0f });
+    ecs_set(entity, Rotation, { .angle = 0.5f });
+    ecs_set(entity, SIScale2D, { .x = 2.0f, .y = 3.0f });
+
+    ecs_run_phase(EcsPostUpdate);
+
+    SIWorldTransform2D *world = ecs_get(entity, SIWorldTransform2D);
+    test_assert(world->x == 12.0f);
+    test_assert(world->y == 24.0f);
+    test_assert(world->rotation == 0.5f);
+    test_assert(world->scale_x == 2.0f);
+    test_assert(world->scale_y == 3.0f);
+
+    ecs_fini();
+}
+
+void scene2d_imports_siphysics_automatically(void) {
+    ecs_init();
+    ECS_MODULE_IMPORT(siengine, {});
+
+    ecs_entity_t sprite = ecs_new();
+    ecs_add(sprite, SISprite);
+
+    test_true(ecs_has(sprite, Position));
+    test_true(ecs_has(sprite, Rotation));
+    test_true(ecs_has(sprite, SIScale2D));
+    test_true(ecs_has(sprite, SIWorldTransform2D));
 
     ecs_fini();
 }
@@ -42,17 +61,10 @@ void scene2d_world_transform_updates_multiple_entities(void) {
     ecs_entity_t entities[10];
     for (uint32_t i = 0; i < 10; i++) {
         entities[i] = ecs_new();
-        ecs_set(
-            entities[i],
-            SITransform2D,
-            {
-                .x = 10.0f + i,
-                .y = 20.0f + i,
-                .rotation = 0.1f * i,
-                .scale_x = 2.0f + i,
-                .scale_y = 3.0f + i,
-            }
-        );
+        ecs_add(entities[i], SIWorldTransform2D);
+        ecs_set(entities[i], Position, { .x = 10.0f + i, .y = 20.0f + i });
+        ecs_set(entities[i], Rotation, { .angle = 0.1f * i });
+        ecs_set(entities[i], SIScale2D, { .x = 2.0f + i, .y = 3.0f + i });
     }
 
     ecs_run_phase(EcsPostUpdate);
@@ -69,7 +81,7 @@ void scene2d_world_transform_updates_multiple_entities(void) {
     ecs_fini();
 }
 
-void scene2d_camera_requires_transform(void) {
+void scene2d_camera_requires_spatial_components(void) {
     ecs_init();
     register_scene2d();
 
@@ -85,7 +97,9 @@ void scene2d_camera_requires_transform(void) {
         }
     );
 
-    test_true(ecs_has(camera, SITransform2D));
+    test_true(ecs_has(camera, Position));
+    test_true(ecs_has(camera, Rotation));
+    test_true(ecs_has(camera, SIScale2D));
     test_true(ecs_has(camera, SIWorldTransform2D));
     test_true(ecs_has(camera, SICameraViewport));
     test_assert(ecs_get(camera, SICamera2D)->viewport_width == 320.0f);
@@ -122,7 +136,7 @@ void scene2d_query_matches_enabled_cameras(void) {
     ecs_query_id_t query = ecs_query(
         { .terms = {
               ecs_in(SICamera2D),
-              ecs_in(SITransform2D),
+              ecs_in(SIWorldTransform2D),
           } }
     );
     ecs_iter_t it = ecs_query_iter(query);
@@ -171,19 +185,16 @@ void scene2d_world_transform_follows_parent(void) {
     register_scene2d();
 
     ecs_entity_t parent = ecs_new();
-    ecs_set(
-        parent,
-        SITransform2D,
-        {
-            .x = 10.0f,
-            .y = 20.0f,
-            .scale_x = 2.0f,
-            .scale_y = 3.0f,
-        }
-    );
+    ecs_add(parent, SIWorldTransform2D);
+    ecs_set(parent, Position, { .x = 10.0f, .y = 20.0f });
+    ecs_set(parent, Rotation, { .angle = 0.0f });
+    ecs_set(parent, SIScale2D, { .x = 2.0f, .y = 3.0f });
 
     ecs_entity_t child = ecs_new();
-    ecs_set(child, SITransform2D, { .x = 4.0f, .y = 5.0f, .scale_x = 1.0f, .scale_y = 1.0f });
+    ecs_add(child, SIWorldTransform2D);
+    ecs_set(child, Position, { .x = 4.0f, .y = 5.0f });
+    ecs_set(child, Rotation, { .angle = 0.5f });
+    ecs_set(child, SIScale2D, { .x = 1.0f, .y = 1.0f });
     ecs_relate(child, ChildOf, parent);
 
     ecs_run_phase(EcsPostUpdate);
@@ -193,6 +204,7 @@ void scene2d_world_transform_follows_parent(void) {
     test_assert(world->y == 35.0f);
     test_assert(world->scale_x == 2.0f);
     test_assert(world->scale_y == 3.0f);
+    test_assert(world->rotation == 0.5f);
 
     ecs_fini();
 }
@@ -233,14 +245,16 @@ void scene2d_default_layers_are_ordered(void) {
     ecs_fini();
 }
 
-void scene2d_sprite_requires_transform(void) {
+void scene2d_sprite_requires_spatial_components(void) {
     ecs_init();
     register_scene2d();
 
     ecs_entity_t sprite = ecs_new();
     ecs_add(sprite, SISprite);
 
-    test_true(ecs_has(sprite, SITransform2D));
+    test_true(ecs_has(sprite, Position));
+    test_true(ecs_has(sprite, Rotation));
+    test_true(ecs_has(sprite, SIScale2D));
     test_true(ecs_has(sprite, SIWorldTransform2D));
 
     ecs_fini();
@@ -257,9 +271,21 @@ void scene2d_shapes_require_transform_and_default_layer(void) {
     ecs_entity_t triangle = ecs_new();
     ecs_add(triangle, SITriangle);
 
-    test_true(ecs_has(circle, SITransform2D));
+    test_true(ecs_has(circle, Position));
+    test_true(ecs_has(circle, Rotation));
+    test_true(ecs_has(circle, SIScale2D));
     test_true(ecs_has(circle, SIWorldTransform2D));
     test_true(ecs_has(circle, SIColor));
+    test_true(ecs_has(rectangle, Position));
+    test_true(ecs_has(rectangle, Rotation));
+    test_true(ecs_has(rectangle, SIScale2D));
+    test_true(ecs_has(rectangle, SIWorldTransform2D));
+    test_true(ecs_has(rectangle, SIColor));
+    test_true(ecs_has(triangle, Position));
+    test_true(ecs_has(triangle, Rotation));
+    test_true(ecs_has(triangle, SIScale2D));
+    test_true(ecs_has(triangle, SIWorldTransform2D));
+    test_true(ecs_has(triangle, SIColor));
     test_assert(ecs_target(circle, Layer) == SILayerWorld);
     test_assert(ecs_target(rectangle, Layer) == SILayerWorld);
     test_assert(ecs_target(triangle, Layer) == SILayerWorld);
@@ -281,7 +307,9 @@ void scene2d_sprite_gets_default_world_layer(void) {
 
     test_true(ecs_has(sprite, SISprite));
     test_true(ecs_has(sprite, SIRenderable));
-    test_true(ecs_has(sprite, SITransform2D));
+    test_true(ecs_has(sprite, Position));
+    test_true(ecs_has(sprite, Rotation));
+    test_true(ecs_has(sprite, SIScale2D));
     test_true(ecs_has(sprite, SIWorldTransform2D));
     test_true(ecs_has(sprite, SIColor));
     test_true(ecs_has(sprite, SISpriteFlip));
