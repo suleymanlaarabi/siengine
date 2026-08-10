@@ -46,9 +46,14 @@ static void siplatform_web_frame(void *context) {
 #endif
 
 void siplatform_run(void) {
+    /* The caller owns this thread. ECS main-thread-only systems consume
+     * deferred asset requests and perform all SDL/GPU work here. */
 #if defined(__EMSCRIPTEN__)
     emscripten_set_main_loop_arg(siplatform_web_frame, NULL, 0, true);
 #else
-    ecs_run();
+    while (true) {
+        if (!ecs_progress())
+            break;
+    }
 #endif
 }

@@ -12,6 +12,8 @@ extern "C" {
 
 #define DEG2RAD(deg) ((deg) * 0.01745329251994329576923690768489)
 
+/* Import the module during world setup on the owner/main thread: it creates
+ * the SDL/GPU context and registers the engine resources and systems. */
 ECS_MODULE_DECLARE(siengine, {});
 
 ECS_RESOURCE_DECLARE_CPP(
@@ -33,6 +35,9 @@ ECS_RESOURCE_DECLARE_CPP(
         }
     )
 );
+/* SIWindow is a main-thread configuration resource. Set it before
+ * ecs_progress/ecs_run; setting or removing it during a worker callback is not
+ * part of the public contract because its lifecycle controls SDL. */
 
 ECS_RESOURCE_DECLARE_CPP(
     SIAssetRoot,
@@ -42,6 +47,9 @@ ECS_RESOURCE_DECLARE_CPP(
         SIAssetRoot(const char *path) : path{path} {}
     )
 );
+/* Set SIAssetRoot before running the world and keep the pointed-to string
+ * alive and immutable for the rest of the run. Texture requests resolve it on
+ * Siengine's main-thread asset system. */
 
 typedef ecs_entity_t SITextureHandle;
 
@@ -186,10 +194,23 @@ ECS_COMPONENT_DECLARE(SIMaterial2D, {
     uint8_t filter;
 });
 
+/* ECS component and relation mutations may be issued by worker systems and
+ * become visible at the SIECS deferral flush. Component pointers returned by
+ * ecs_get/ecs_field are callback-borrowed and must not cross a system or frame
+ * boundary. SIMaterial2D.texture is a stable handle; its GPU object may remain
+ * pending until the next main-thread frame pump. */
+
 ECS_RELATION_DECLARE(Material);
 
+/* Worker-safe through ECS deferral. This reserves a stable handle and queues a
+ * main-thread GPU upload. The texture becomes usable after the next ECS flush;
+ * no returned ECS pointer may be retained by the caller. */
 SITextureHandle siengine_load_texture(const char *path, SIFilterMode filter);
+/* Worker-safe through ECS deferral. GPU destruction is consumed before a later
+ * frame extraction, never by the caller or by a component removal hook. */
 void siengine_release_texture(SITextureHandle texture);
+/* Main-thread-only and valid outside ecs_progress/ecs_run callbacks. This
+ * loop owns the main-thread asset queue and SDL/GPU draw sequence. */
 void siengine_run(void);
 
 #ifdef __cplusplus

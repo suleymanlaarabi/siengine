@@ -110,6 +110,9 @@ ECS_RESOURCE_DECLARE(SIRenderState, {
     ecs_query_id_t renderable_query;
 });
 
+/* These callbacks are installed as main-thread-only ECS systems. The
+ * persistent queries are owned by SIRenderState and are never traversed by a
+ * worker. */
 void sirender_begin_frame(ecs_iter_t *it);
 void sirender_extract(ecs_iter_t *it);
 void sirender_end_frame(ecs_iter_t *it);

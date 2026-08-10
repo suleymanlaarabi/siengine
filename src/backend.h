@@ -3,6 +3,8 @@
 
 #include "siengine.h"
 
+/* All backend calls are main-thread-only and are made by the main-thread ECS
+ * systems or the platform lifecycle. */
 void sibackend_init(void);
 void sibackend_shutdown(void);
 void sibackend_begin_frame(void);

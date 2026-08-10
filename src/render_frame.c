@@ -247,6 +247,8 @@ void sirender_extract(ecs_iter_t *it) {
 
         if (sprites) {
             const SITexture *texture = ecs_get(material->texture, SITexture);
+            if (texture->state != SI_TEXTURE_READY)
+                continue;
             extract_sprite_batch(
                 render,
                 batch,

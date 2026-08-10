@@ -25,6 +25,7 @@ void sitransform_update_parent(ecs_iter_t *it);
 void sianimation_update(ecs_iter_t *it);
 
 void siwindow_register();
+void siwindow_poll_events(void);
 void siassets_register();
 void sirender_register();
 SIEngineCtx siplatform_init(void);

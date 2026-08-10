@@ -49,24 +49,33 @@ void sirender_register(void) {
         .order_by = ecs_order_by_target(Layer),
     });
 
-    ecs_system({
+    ecs_system_id_t begin_frame = ecs_system({
         .name = "BeginFrame",
         .phase = EcsPreRender,
         .callback = sirender_begin_frame,
+        .main_thread_only = true,
+        .read_resources = { ecs_id(SIEngineCtx) },
     });
     ecs_system({
         .name = "ExtractRender",
         .phase = EcsPreRender,
         .callback = sirender_extract,
+        .main_thread_only = true,
+        .after = { begin_frame },
+        .write_resources = { ecs_id(SIRenderState) },
     });
     ecs_system({
         .name = "DrawWindow",
         .phase = EcsOnRender,
         .callback = sirender_draw_window,
+        .main_thread_only = true,
+        .read_resources = { ecs_id(SIRenderState), ecs_id(SIEngineCtx) },
     });
     ecs_system({
         .name = "EndFrame",
         .phase = EcsPostRender,
         .callback = sirender_end_frame,
+        .main_thread_only = true,
+        .read_resources = { ecs_id(SIEngineCtx) },
     });
 }

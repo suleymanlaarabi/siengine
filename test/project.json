@@ -33,7 +33,8 @@
         "testcases": [
           "texture_path_uses_asset_root",
           "live_texture_is_released_during_ecs_fini",
-          "animation_updates_sprite_frame"
+          "animation_updates_sprite_frame",
+          "texture_load_from_worker_is_queued"
         ]
       },
       {
@@ -51,6 +52,18 @@
         "id": "window",
         "testcases": [
           "canvas_id_is_stored"
+        ]
+      },
+      {
+        "id": "threading",
+        "testcases": [
+          "structural_mutations_are_deferred",
+          "after_observes_structural_mutation",
+          "read_read_resources_can_overlap",
+          "read_write_resources_are_serialized",
+          "write_write_resources_are_serialized",
+          "unrelated_resources_can_overlap",
+          "sirender_state_writers_are_serialized"
         ]
       }
     ]

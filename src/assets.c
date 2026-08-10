@@ -1,10 +1,12 @@
 #include "assets_internal.h"
 #include "backend.h"
+#include "engine_internal.h"
 #include <SDL3/SDL_filesystem.h>
 #include <siengine.h>
 #include <string.h>
 
 ECS_RESOURCE_DEFINE(SIAssetRoot);
+ECS_RESOURCE_DEFINE(SIAssetState);
 
 static void append_asset_path(char destination[512], const char *path) {
     size_t length = strlen(destination);
@@ -26,28 +28,84 @@ static const char *resolve_asset_path(const char *path, char resolved[512]) {
     return resolved;
 }
 
-static void texture_on_remove(ecs_entity_t entity, ecs_component_t component, void *value) {
-    (void)entity;
-    (void)component;
-    sibackend_texture_destroy(value);
-}
-
-ECS_COMPONENT_DEFINE(SITexture, .on_remove = texture_on_remove);
+ECS_COMPONENT_DEFINE(SITexture);
+ECS_TAG_DEFINE(SITextureRelease);
 
 SITextureHandle siengine_load_texture(const char *path, SIFilterMode filter) {
-    char resolved_path[512];
-    path = resolve_asset_path(path, resolved_path);
-
     SITextureHandle texture = ecs_new();
-    ecs_add(texture, SITexture);
-    sibackend_texture_create(path, filter, ecs_get(texture, SITexture));
+    SITexture request = {
+        .filter = (uint8_t)filter,
+        .state = SI_TEXTURE_PENDING,
+    };
+    size_t path_length = strlen(path);
+    if (path_length >= sizeof(request.path))
+        path_length = sizeof(request.path) - 1;
+    memcpy(request.path, path, path_length);
+    request.path[path_length] = '\0';
+    ecs_set_cid(texture, ecs_id(SITexture), &request);
     return texture;
 }
 
-void siengine_release_texture(SITextureHandle texture) { ecs_kill(texture); }
+void siengine_release_texture(SITextureHandle texture) { ecs_add(texture, SITextureRelease); }
+
+static void upload_textures(ecs_iter_t *it) {
+    SITexture *textures = ecs_field(it, 0);
+    for (uint32_t i = 0; i < it->count; i++) {
+        if (textures[i].state != SI_TEXTURE_PENDING)
+            continue;
+
+        char resolved_path[512];
+        const char *path = resolve_asset_path(textures[i].path, resolved_path);
+        sibackend_texture_create(path, textures[i].filter, &textures[i]);
+        textures[i].state = SI_TEXTURE_READY;
+    }
+}
+
+static void release_textures(ecs_iter_t *it) {
+    SITexture *textures = ecs_field(it, 0);
+    for (uint32_t i = 0; i < it->count; i++) {
+        if (textures[i].state == SI_TEXTURE_READY)
+            sibackend_texture_destroy(&textures[i]);
+        ecs_kill(it->entities[i]);
+    }
+}
 
 void siassets_register(void) {
     ECS_COMPONENT_REGISTER(SITexture);
+    ECS_COMPONENT_REGISTER(SITextureRelease);
     ECS_RESOURCE_REGISTER(SIAssetRoot);
+    ECS_RESOURCE_REGISTER(SIAssetState);
     ecs_set_resource(SIAssetRoot, { .path = "./assets" });
+    ecs_set_resource(SIAssetState, {});
+    SIAssetState *assets = ecs_get_resource(SIAssetState);
+    assets->release_phase = ecs_phase({
+        .name = "SiengineAssetRelease",
+        .after = EcsPostRender,
+    });
+    ecs_system({
+        .name = "SiengineUploadTextures",
+        .phase = EcsPreUpdate,
+        .callback = upload_textures,
+        .main_thread_only = true,
+        .read_resources = { ecs_id(SIAssetRoot), ecs_id(SIEngineCtx) },
+        .query = {
+            .terms = {
+                ecs_inout(SITexture),
+                ecs_not(SITextureRelease),
+            },
+        },
+    });
+    ecs_system({
+        .name = "SiengineReleaseTextures",
+        .phase = assets->release_phase,
+        .callback = release_textures,
+        .main_thread_only = true,
+        .read_resources = { ecs_id(SIEngineCtx) },
+        .query = {
+            .terms = {
+                ecs_inout(SITexture),
+                ecs_filter(SITextureRelease),
+            },
+        },
+    });
 }

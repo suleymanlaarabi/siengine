@@ -3,7 +3,7 @@
 #include <format>
 
 int main(int argc, char *argv[]) {
-    ecs::init({ .target_fps = 120 });
+    ecs::init({ .target_fps = 120, .worker_threads = 4 });
 
     ecs::import<siengine>();
     ecs::set_resource(SIWindow("Hello", "siengine-canvas"));
@@ -15,15 +15,17 @@ int main(int argc, char *argv[]) {
 
     ecs::entity::create().add<SICamera2D>();
 
-    ecs::entity::create()
-        .add<Dynamic>()
-        .set(
-            SIColor::from_rgb(255, 0, 0),
-            SICircle(5.),
-            Position{ 0, 100 },
-            CircleCollider{ .radius = 2 }
-        )
-        .relate<Material>(SI2DDefaultMaterial);
+    for (int i = 0; i < 8; i++) {
+        ecs::entity::create()
+            .add<Dynamic>()
+            .set(
+                SIColor::from_rgb(255, 0, 0),
+                SICircle(5.),
+                Position{ 0, 30.f + i * 20.f },
+                CircleCollider{ .radius = 2 }
+            )
+            .relate<Material>(SI2DDefaultMaterial);
+    }
 
     ecs::entity::create()
         .add<Static>()

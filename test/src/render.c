@@ -4,7 +4,9 @@
 static void import_engine(void) { ECS_MODULE_IMPORT(siengine, {}); }
 
 static SITextureHandle make_test_texture(void) {
-    return siengine_load_texture("hero.png", SI_FILTER_NEAREST);
+    SITextureHandle texture = siengine_load_texture("hero.png", SI_FILTER_NEAREST);
+    ecs_run_phase(EcsPreUpdate);
+    return texture;
 }
 
 static ecs_entity_t make_material(SITextureHandle texture) {
