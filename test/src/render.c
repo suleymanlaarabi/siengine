@@ -27,7 +27,7 @@ void render_queries_are_world_owned_across_cycles(void) {
         ecs_init();
         import_engine();
 
-        SIRenderState *render = ecs_resource(SIRenderState);
+        SIRenderState *render = ecs_get_resource(SIRenderState);
         test_true(render->camera_query != 0);
         test_true(render->renderable_query != 0);
 
@@ -71,7 +71,7 @@ void render_extracts_once_for_multiple_views(void) {
 
     sirender_extract(NULL);
 
-    SIRenderState *render = ecs_resource(SIRenderState);
+    SIRenderState *render = ecs_get_resource(SIRenderState);
     test_int(2, render->views.size);
     test_int(1, render->batches.size);
     test_int(1, render->instances.size);
@@ -83,26 +83,74 @@ void render_extracts_once_for_multiple_views(void) {
     ecs_fini();
 }
 
+void render_extracts_postupdate_hierarchy_in_render_space(void) {
+    ecs_init();
+    import_engine();
+
+    SITextureHandle texture = make_test_texture();
+    ecs_entity_t material = make_material(texture);
+
+    ecs_entity_t camera = ecs_new();
+    ecs_add(camera, SICamera2D);
+    ecs_set(camera, Position, { .x = 100.0f, .y = 50.0f });
+
+    ecs_entity_t parent = ecs_new();
+    ecs_add(parent, SIWorldTransform2D);
+    ecs_set(parent, Position, { .x = 100.0f, .y = 50.0f });
+
+    ecs_entity_t sprite = ecs_new();
+    ecs_add(sprite, SISprite);
+    ecs_set(sprite, Position, { .x = 10.0f, .y = 5.0f });
+    ecs_relate(sprite, ChildOf, parent);
+    ecs_relate(sprite, Material, material);
+
+    ecs_run_phase(EcsPostUpdate);
+    sirender_extract(NULL);
+
+    SIRenderState *render = ecs_get_resource(SIRenderState);
+    test_int(1, render->views.size);
+    test_int(1, render->instances.size);
+
+    const SIWorldTransform2D *camera_world = ecs_get(camera, SIWorldTransform2D);
+    const SIWorldTransform2D *sprite_world = ecs_get(sprite, SIWorldTransform2D);
+    const SIRenderView *view = sicore_vec_get(&render->views, 0, SIRenderView);
+    const SIInstance2D *instance = sicore_vec_get(&render->instances, 0, SIInstance2D);
+
+    test_assert(camera_world->x == 100.0f);
+    test_assert(camera_world->y == -50.0f);
+
+    test_assert(sprite_world->x == 110.0f);
+    test_assert(sprite_world->y == -55.0f);
+
+    test_assert((view->left + view->right) * 0.5f == 100.0f);
+    test_assert((view->top + view->bottom) * 0.5f == -50.0f);
+
+    test_assert(instance->x == 110.0f);
+    test_assert(instance->y == -55.0f);
+
+    ecs_fini();
+}
+
 void render_extracts_sheet_region_and_layer_order(void) {
     ecs_init();
     import_engine();
     SITextureHandle texture = make_test_texture();
     ecs_entity_t material = make_material(texture);
+    ecs_set(material, SIMaterial2D, { .texture = texture, .filter = SI_FILTER_NEAREST });
     ecs_set(
         material,
-        SIMaterial2D,
-        { .texture = texture, .filter = SI_FILTER_NEAREST }
+        SISpriteSheet,
+        {
+            .columns = 4,
+            .rows = 2,
+            .frame_width = 32,
+            .frame_height = 24,
+            .margin_x = 2,
+            .margin_y = 3,
+            .spacing_x = 1,
+            .spacing_y = 2,
+        }
     );
-    ecs_set(material, SISpriteSheet, {
-        .columns = 4,
-        .rows = 2,
-        .frame_width = 32,
-        .frame_height = 24,
-        .margin_x = 2,
-        .margin_y = 3,
-        .spacing_x = 1,
-        .spacing_y = 2,
-    });
 
     ecs_entity_t camera = ecs_new();
     ecs_add(camera, SICamera2D);
@@ -116,7 +164,7 @@ void render_extracts_sheet_region_and_layer_order(void) {
     ecs_relate(foreground, Material, material);
 
     sirender_extract(NULL);
-    SIRenderState *render = ecs_resource(SIRenderState);
+    SIRenderState *render = ecs_get_resource(SIRenderState);
     test_int(2, render->batches.size);
     test_true(sicore_vec_get(&render->batches, 0, SIRenderBatch)->layer == SILayerBackground);
     test_true(sicore_vec_get(&render->batches, 1, SIRenderBatch)->layer == SILayerForeground);
@@ -147,7 +195,7 @@ void render_extracts_colored_shapes(void) {
     ecs_set(triangle, SIColor, { .r = 0.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f });
 
     sirender_extract(NULL);
-    SIRenderState *render = ecs_resource(SIRenderState);
+    SIRenderState *render = ecs_get_resource(SIRenderState);
     test_int(3, render->batches.size);
     test_int(3, render->instances.size);
     test_true(sicore_vec_get(&render->batches, 0, SIRenderBatch)->pipeline == SI_PIPELINE_CIRCLE);
@@ -181,8 +229,8 @@ void render_culls_shapes(void) {
 
     ecs_run_phase(EcsPostUpdate);
     sirender_extract(NULL);
-    test_int(1, ecs_resource(SIRenderState)->instances.size);
-    test_int(1, ecs_resource(SIRenderState)->batches.size);
+    test_int(1, ecs_get_resource(SIRenderState)->instances.size);
+    test_int(1, ecs_get_resource(SIRenderState)->batches.size);
 
     ecs_fini();
 }

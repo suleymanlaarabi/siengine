@@ -29,7 +29,7 @@ void sitransform_update_parent(ecs_iter_t *it) {
         if (!parent_world) {
             worlds[i] = (SIWorldTransform2D){
                 .x = positions[i].x,
-                .y = positions[i].y,
+                .y = -positions[i].y,
                 .rotation = rotations[i].angle,
                 .scale_x = scales[i].x,
                 .scale_y = scales[i].y,
@@ -39,7 +39,7 @@ void sitransform_update_parent(ecs_iter_t *it) {
         float c = cosf(parent_world->rotation);
         float s = sinf(parent_world->rotation);
         float x = positions[i].x * parent_world->scale_x;
-        float y = positions[i].y * parent_world->scale_y;
+        float y = -positions[i].y * parent_world->scale_y;
         worlds[i] = (SIWorldTransform2D){
             .x = parent_world->x + x * c - y * s,
             .y = parent_world->y + x * s + y * c,

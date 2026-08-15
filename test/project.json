@@ -20,6 +20,7 @@
           "virtual_resolution_add_initializes_defaults",
           "child_of_keeps_native_parent_relation",
           "world_transform_follows_parent",
+          "world_transform_updates_hierarchy_by_depth",
           "default_layers_are_ordered",
           "sprite_requires_spatial_components",
           "shapes_require_transform_and_default_layer",
@@ -43,6 +44,7 @@
           "queries_are_world_owned_across_cycles",
           "sprite_defaults_are_components",
           "extracts_once_for_multiple_views",
+          "extracts_postupdate_hierarchy_in_render_space",
           "extracts_sheet_region_and_layer_order",
           "extracts_colored_shapes",
           "culls_shapes"

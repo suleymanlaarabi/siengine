@@ -1,7 +1,8 @@
 #include "engine_internal.h"
+#include "siecs.h"
 #include <SDL3/SDL_events.h>
-#include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_gpu.h>
+#include <SDL3/SDL_properties.h>
 #include <SDL3/SDL_video.h>
 #include <siengine.h>
 #include <stdint.h>
@@ -41,7 +42,7 @@ static void configure_swapchain(SIEngineCtx *ctx, SDL_Window *window, const SIWi
 static void create_window(const SIWindow *window_desc);
 
 static void on_window_set(const void *new_value) {
-    SIEngineCtx *ctx = ecs_resource(SIEngineCtx);
+    SIEngineCtx *ctx = ecs_get_resource(SIEngineCtx);
     const SIWindow *window_desc = new_value;
     uint32_t width = window_desc->width ? window_desc->width : 1280;
     uint32_t height = window_desc->height ? window_desc->height : 720;
@@ -59,7 +60,7 @@ static void on_window_set(const void *new_value) {
 }
 
 static void create_window(const SIWindow *window_desc) {
-    SIEngineCtx *ctx = ecs_resource(SIEngineCtx);
+    SIEngineCtx *ctx = ecs_get_resource(SIEngineCtx);
 
     uint32_t width = window_desc->width ? window_desc->width : 1280;
     uint32_t height = window_desc->height ? window_desc->height : 720;
@@ -131,11 +132,13 @@ static void poll_window_events_system(ecs_iter_t *it) {
 
 static void on_window_remove(const void *value) {
     (void)value;
-    SIEngineCtx *ctx = ecs_resource(SIEngineCtx);
+    SIEngineCtx *ctx = ecs_get_resource(SIEngineCtx);
 
     if (ctx->window) {
 #if defined(__EMSCRIPTEN__)
-        emscripten_webgl_destroy_context((EMSCRIPTEN_WEBGL_CONTEXT_HANDLE)(uintptr_t)ctx->gl_context);
+        emscripten_webgl_destroy_context(
+            (EMSCRIPTEN_WEBGL_CONTEXT_HANDLE)(uintptr_t)ctx->gl_context
+        );
         ctx->gl_context = NULL;
 #else
         SDL_ReleaseWindowFromGPUDevice(ctx->primary_gpu, ctx->window);
@@ -145,19 +148,17 @@ static void on_window_remove(const void *value) {
     }
 }
 
-ECS_RESOURCE_DEFINE(
-    SIWindow,
-    .on_set = on_window_set,
-    .on_remove = on_window_remove
-);
+ECS_RESOURCE_DEFINE(SIWindow, .on_set = on_window_set, .on_remove = on_window_remove);
 
 void siwindow_register() {
     ECS_RESOURCE_REGISTER(SIWindow);
-    ecs_system({
-        .name = "PollWindowEvents",
-        .phase = EcsPreUpdate,
-        .callback = poll_window_events_system,
-        .main_thread_only = true,
-        .read_resources = { ecs_id(SIEngineCtx) },
-    });
+    ecs_system(
+        {
+            .name = "PollWindowEvents",
+            .phase = EcsPreUpdate,
+            .callback = poll_window_events_system,
+            .main_thread_only = true,
+            .read_resources = { ecs_id(SIEngineCtx) },
+        }
+    );
 }

@@ -31,7 +31,7 @@ void scene2d_world_transform_adds_spatial_components(void) {
 
     SIWorldTransform2D *world = ecs_get(entity, SIWorldTransform2D);
     test_assert(world->x == 12.0f);
-    test_assert(world->y == 24.0f);
+    test_assert(world->y == -24.0f);
     test_assert(world->rotation == 0.5f);
     test_assert(world->scale_x == 2.0f);
     test_assert(world->scale_y == 3.0f);
@@ -72,7 +72,7 @@ void scene2d_world_transform_updates_multiple_entities(void) {
     for (uint32_t i = 0; i < 10; i++) {
         SIWorldTransform2D *world = ecs_get(entities[i], SIWorldTransform2D);
         test_assert(world->x == 10.0f + i);
-        test_assert(world->y == 20.0f + i);
+        test_assert(world->y == -(20.0f + i));
         test_assert(world->rotation == 0.1f * i);
         test_assert(world->scale_x == 2.0f + i);
         test_assert(world->scale_y == 3.0f + i);
@@ -199,12 +199,55 @@ void scene2d_world_transform_follows_parent(void) {
 
     ecs_run_phase(EcsPostUpdate);
 
+    SIWorldTransform2D *parent_world = ecs_get(parent, SIWorldTransform2D);
+    test_assert(parent_world->x == 10.0f);
+    test_assert(parent_world->y == -20.0f);
+    test_assert(parent_world->rotation == 0.0f);
+    test_assert(parent_world->scale_x == 2.0f);
+    test_assert(parent_world->scale_y == 3.0f);
+
     SIWorldTransform2D *world = ecs_get(child, SIWorldTransform2D);
     test_assert(world->x == 18.0f);
-    test_assert(world->y == 35.0f);
+    test_assert(world->y == -35.0f);
     test_assert(world->scale_x == 2.0f);
     test_assert(world->scale_y == 3.0f);
     test_assert(world->rotation == 0.5f);
+
+    ecs_fini();
+}
+
+void scene2d_world_transform_updates_hierarchy_by_depth(void) {
+    ecs_init();
+    register_scene2d();
+
+    ecs_entity_t root = ecs_new();
+    ecs_add(root, SIWorldTransform2D);
+    ecs_set(root, Position, { .x = 10.0f, .y = 20.0f });
+
+    ecs_entity_t child = ecs_new();
+    ecs_add(child, SIWorldTransform2D);
+    ecs_set(child, Position, { .x = 4.0f, .y = 5.0f });
+    ecs_relate(child, ChildOf, root);
+
+    ecs_entity_t grandchild = ecs_new();
+    ecs_add(grandchild, SIWorldTransform2D);
+    ecs_set(grandchild, Position, { .x = 2.0f, .y = 3.0f });
+    ecs_relate(grandchild, ChildOf, child);
+
+    ecs_run_phase(EcsPostUpdate);
+
+    const SIWorldTransform2D *root_world = ecs_get(root, SIWorldTransform2D);
+    const SIWorldTransform2D *child_world = ecs_get(child, SIWorldTransform2D);
+    const SIWorldTransform2D *grandchild_world = ecs_get(grandchild, SIWorldTransform2D);
+
+    test_assert(root_world->x == 10.0f);
+    test_assert(root_world->y == -20.0f);
+
+    test_assert(child_world->x == 14.0f);
+    test_assert(child_world->y == -25.0f);
+
+    test_assert(grandchild_world->x == 16.0f);
+    test_assert(grandchild_world->y == -28.0f);
 
     ecs_fini();
 }

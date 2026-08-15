@@ -83,8 +83,7 @@ static void extract_sprite_batch(
     for (uint32_t i = 0; i < count; i++) {
         if (!instance_visible(render, &transforms[i], width, height))
             continue;
-        SIInstance2D *instance =
-            sicore_vec_push_empty(&render->instances, sizeof(*instance));
+        SIInstance2D *instance = sicore_vec_push_empty(&render->instances, sizeof(*instance));
         extract_transform(instance, &transforms[i], &colors[i]);
         instance->width = width;
         instance->height = height;
@@ -117,8 +116,7 @@ static void extract_circle_batch(
         float size = circles[i].radius * 2.0f;
         if (!instance_visible(render, &transforms[i], size, size))
             continue;
-        SIInstance2D *instance =
-            sicore_vec_push_empty(&render->instances, sizeof(*instance));
+        SIInstance2D *instance = sicore_vec_push_empty(&render->instances, sizeof(*instance));
         extract_transform(instance, &transforms[i], &colors[i]);
         instance->width = size;
         instance->height = size;
@@ -147,8 +145,7 @@ static void extract_rectangle_batch(
     for (uint32_t i = 0; i < count; i++) {
         if (!instance_visible(render, &transforms[i], rectangles[i].width, rectangles[i].height))
             continue;
-        SIInstance2D *instance =
-            sicore_vec_push_empty(&render->instances, sizeof(*instance));
+        SIInstance2D *instance = sicore_vec_push_empty(&render->instances, sizeof(*instance));
         extract_transform(instance, &transforms[i], &colors[i]);
         instance->width = rectangles[i].width;
         instance->height = rectangles[i].height;
@@ -177,8 +174,7 @@ static void extract_triangle_batch(
     for (uint32_t i = 0; i < count; i++) {
         if (!instance_visible(render, &transforms[i], triangles[i].base, triangles[i].height))
             continue;
-        SIInstance2D *instance =
-            sicore_vec_push_empty(&render->instances, sizeof(*instance));
+        SIInstance2D *instance = sicore_vec_push_empty(&render->instances, sizeof(*instance));
         extract_transform(instance, &transforms[i], &colors[i]);
         instance->width = triangles[i].base;
         instance->height = triangles[i].height;
@@ -193,7 +189,7 @@ void sirender_begin_frame(ecs_iter_t *it) {
 
 void sirender_extract(ecs_iter_t *it) {
     (void)it;
-    SIRenderState *render = ecs_resource(SIRenderState);
+    SIRenderState *render = ecs_get_resource(SIRenderState);
     sicore_vec_clear(&render->views);
     sicore_vec_clear(&render->batches);
     sicore_vec_clear(&render->instances);
@@ -206,8 +202,7 @@ void sirender_extract(ecs_iter_t *it) {
         const SIVirtualResolution *virtual_resolution = ecs_field(&cameras, 3);
 
         for (uint32_t i = 0; i < cameras.count; i++) {
-            SIRenderView *view =
-                sicore_vec_push_empty(&render->views, sizeof(*view));
+            SIRenderView *view = sicore_vec_push_empty(&render->views, sizeof(*view));
             float width = cameras_data[i].viewport_width / cameras_data[i].zoom;
             float height = cameras_data[i].viewport_height / cameras_data[i].zoom;
             *view = (SIRenderView){
@@ -305,10 +300,14 @@ void sirender_extract(ecs_iter_t *it) {
 
 void sirender_draw_window(ecs_iter_t *it) {
     (void)it;
-    SIRenderState *render = ecs_resource(SIRenderState);
+    SIRenderState *render = ecs_get_resource(SIRenderState);
     SIRenderView *views = sicore_vec_data(&render->views, SIRenderView);
     SIRenderBatch *batches = sicore_vec_data(&render->batches, SIRenderBatch);
-    sibackend_upload_instances(render->instances.data, render->instances.size, sizeof(SIInstance2D));
+    sibackend_upload_instances(
+        render->instances.data,
+        render->instances.size,
+        sizeof(SIInstance2D)
+    );
     for (uint32_t view_index = 0; view_index < render->views.size; view_index++) {
         for (uint32_t batch_index = 0; batch_index < render->batches.size; batch_index++)
             sibackend_draw_batch(&batches[batch_index], &views[view_index]);
