@@ -88,7 +88,11 @@ void assets_texture_load_from_worker_is_queued(void) {
         .name = "LoadTextureFromWorker",
         .phase = EcsOnUpdate,
         .callback = load_texture_from_worker,
-        .query = { .terms = { ecs_inout(AssetsTextureTrigger) } },
+        .query = {
+            .components = {
+                ecs_inout(AssetsTextureTrigger),
+            },
+        },
     });
 
     ecs_run_phase(EcsOnUpdate);

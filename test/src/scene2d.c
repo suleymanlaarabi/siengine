@@ -134,10 +134,12 @@ void scene2d_query_matches_enabled_cameras(void) {
     ecs_add(disabled, Disabled);
 
     ecs_query_id_t query = ecs_query(
-        { .terms = {
-              ecs_in(SICamera2D),
-              ecs_in(SIWorldTransform2D),
-          } }
+        {
+            .components = {
+                ecs_in(SICamera2D),
+                ecs_in(SIWorldTransform2D),
+            },
+        }
     );
     ecs_iter_t it = ecs_query_iter(query);
     uint32_t count = 0;
@@ -270,7 +272,9 @@ void scene2d_default_layers_are_ordered(void) {
 
     ecs_query_id_t query = ecs_query(
         {
-            .terms = { ecs_in(SISprite) },
+            .components = {
+                ecs_in(SISprite),
+            },
             .relations = { ecs_rel(Layer) },
             .order_by = ecs_order_by_target(Layer),
         }

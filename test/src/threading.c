@@ -91,13 +91,21 @@ void threading_structural_mutations_are_deferred(void) {
         .name = "ThreadMutationProducer",
         .phase = EcsOnUpdate,
         .callback = mutation_producer,
-        .query = { .terms = { ecs_inout(ThreadMutationA) } },
+        .query = {
+            .components = {
+                ecs_inout(ThreadMutationA),
+            },
+        },
     });
     ecs_system({
         .name = "ThreadMutationObserver",
         .phase = EcsOnUpdate,
         .callback = mutation_observer,
-        .query = { .terms = { ecs_inout(ThreadMutationB) } },
+        .query = {
+            .components = {
+                ecs_inout(ThreadMutationB),
+            },
+        },
     });
 
     ecs_run_phase(EcsOnUpdate);
@@ -130,14 +138,22 @@ void threading_after_observes_structural_mutation(void) {
         .name = "ThreadAfterProducer",
         .phase = EcsOnUpdate,
         .callback = mutation_after_producer,
-        .query = { .terms = { ecs_inout(ThreadMutationA) } },
+        .query = {
+            .components = {
+                ecs_inout(ThreadMutationA),
+            },
+        },
     });
     ecs_system({
         .name = "ThreadAfterObserver",
         .phase = EcsOnUpdate,
         .callback = mutation_after_observer,
         .after = { producer_system },
-        .query = { .terms = { ecs_inout(ThreadMutationB) } },
+        .query = {
+            .components = {
+                ecs_inout(ThreadMutationB),
+            },
+        },
     });
 
     ecs_progress();
@@ -228,35 +244,41 @@ static void resource_setup(void) {
 static void run_resource_pair(
     void (*first)(ecs_iter_t *),
     void (*second)(ecs_iter_t *),
-    ecs_resource_t *first_read,
-    ecs_resource_t *first_write,
-    ecs_resource_t *second_read,
-    ecs_resource_t *second_write
-) {
+    ecs_resource_term_t first_resource,
+    ecs_resource_term_t second_resource
+)
+{
     ecs_entity_t first_entity = ecs_new();
     ecs_add(first_entity, ThreadMutationA);
     ecs_entity_t second_entity = ecs_new();
     ecs_add(second_entity, ThreadMutationB);
+
     ecs_system_desc_t first_desc = {
         .name = "ResourceFirst",
         .phase = EcsOnUpdate,
         .callback = first,
-        .query = { .terms = { ecs_inout(ThreadMutationA) } },
+        .query = {
+            .components = {
+                ecs_inout(ThreadMutationA),
+            },
+            .resources = {
+                first_resource,
+            },
+        },
     };
     ecs_system_desc_t second_desc = {
         .name = "ResourceSecond",
         .phase = EcsOnUpdate,
         .callback = second,
-        .query = { .terms = { ecs_inout(ThreadMutationB) } },
+        .query = {
+            .components = {
+                ecs_inout(ThreadMutationB),
+            },
+            .resources = {
+                second_resource,
+            },
+        },
     };
-    if (first_read)
-        first_desc.read_resources[0] = *first_read;
-    if (first_write)
-        first_desc.write_resources[0] = *first_write;
-    if (second_read)
-        second_desc.read_resources[0] = *second_read;
-    if (second_write)
-        second_desc.write_resources[0] = *second_write;
     ecs_system_init(&first_desc);
     ecs_system_init(&second_desc);
     ecs_run_phase(EcsOnUpdate);
@@ -265,8 +287,12 @@ static void run_resource_pair(
 void threading_read_read_resources_can_overlap(void) {
     ecs_with_features({ .target_fps = 60, .worker_threads = 2 });
     resource_setup();
-    ecs_resource_t read = ecs_id(ThreadReadResource);
-    run_resource_pair(resource_read_a, resource_read_b, &read, NULL, &read, NULL);
+    run_resource_pair(
+        resource_read_a,
+        resource_read_b,
+        ecs_in(ThreadReadResource),
+        ecs_in(ThreadReadResource)
+    );
     test_true(atomic_load(&resource_max_active) == 2);
     ecs_fini();
 }
@@ -274,8 +300,12 @@ void threading_read_read_resources_can_overlap(void) {
 void threading_read_write_resources_are_serialized(void) {
     ecs_with_features({ .target_fps = 60, .worker_threads = 2 });
     resource_setup();
-    ecs_resource_t write = ecs_id(ThreadWriteResource);
-    run_resource_pair(resource_read_write, resource_write_a, NULL, &write, NULL, &write);
+    run_resource_pair(
+        resource_read_write,
+        resource_write_a,
+        ecs_in(ThreadWriteResource),
+        ecs_inout(ThreadWriteResource)
+    );
     test_int(1, atomic_load(&resource_max_active));
     ecs_fini();
 }
@@ -283,8 +313,12 @@ void threading_read_write_resources_are_serialized(void) {
 void threading_write_write_resources_are_serialized(void) {
     ecs_with_features({ .target_fps = 60, .worker_threads = 2 });
     resource_setup();
-    ecs_resource_t write = ecs_id(ThreadWriteResource);
-    run_resource_pair(resource_write_a, resource_write_b, NULL, &write, NULL, &write);
+    run_resource_pair(
+        resource_write_a,
+        resource_write_b,
+        ecs_inout(ThreadWriteResource),
+        ecs_inout(ThreadWriteResource)
+    );
     test_int(1, atomic_load(&resource_max_active));
     ecs_fini();
 }
@@ -292,9 +326,12 @@ void threading_write_write_resources_are_serialized(void) {
 void threading_unrelated_resources_can_overlap(void) {
     ecs_with_features({ .target_fps = 60, .worker_threads = 2 });
     resource_setup();
-    ecs_resource_t read = ecs_id(ThreadReadResource);
-    ecs_resource_t other = ecs_id(ThreadOtherResource);
-    run_resource_pair(resource_read_a, resource_other, &read, NULL, &other, NULL);
+    run_resource_pair(
+        resource_read_a,
+        resource_other,
+        ecs_in(ThreadReadResource),
+        ecs_in(ThreadOtherResource)
+    );
     test_true(atomic_load(&resource_max_active) == 2);
     ecs_fini();
 }
@@ -303,14 +340,11 @@ void threading_sirender_state_writers_are_serialized(void) {
     ecs_with_features({ .target_fps = 60, .worker_threads = 2 });
     ECS_MODULE_IMPORT(siengine, {});
     resource_setup();
-    ecs_resource_t render_state = ecs_id(SIRenderState);
     run_resource_pair(
         render_state_writer_a,
         render_state_writer_b,
-        NULL,
-        &render_state,
-        NULL,
-        &render_state
+        ecs_inout(SIRenderState),
+        ecs_inout(SIRenderState)
     );
     test_int(1, atomic_load(&resource_max_active));
     ecs_fini();

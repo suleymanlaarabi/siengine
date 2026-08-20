@@ -158,7 +158,11 @@ void siwindow_register() {
             .phase = EcsPreUpdate,
             .callback = poll_window_events_system,
             .main_thread_only = true,
-            .read_resources = { ecs_id(SIEngineCtx) },
+            .query = {
+                .resources = {
+                    ecs_in(SIEngineCtx),
+                },
+            },
         }
     );
 }

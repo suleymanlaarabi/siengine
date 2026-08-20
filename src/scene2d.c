@@ -133,7 +133,7 @@ void siscene2d_import(const siscene2d_props_t *props) {
         .phase = EcsPostUpdate,
         .callback = sitransform_update_no_parent,
         .query = {
-            .terms = {
+            .components = {
                 ecs_in(Position),
                 ecs_in(Rotation),
                 ecs_in(SIScale2D),
@@ -151,7 +151,7 @@ void siscene2d_import(const siscene2d_props_t *props) {
         .callback = sitransform_update_parent,
         .after = { update_no_parent },
         .query = {
-            .terms = {
+            .components = {
                 ecs_in(Position),
                 ecs_in(Rotation),
                 ecs_in(SIScale2D),
@@ -169,7 +169,7 @@ void siscene2d_import(const siscene2d_props_t *props) {
         .phase = EcsOnUpdate,
         .callback = sianimation_update,
         .query = {
-            .terms = {
+            .components = {
                 ecs_inout(SISprite),
                 ecs_in(SIAnimation),
                 ecs_inout(SIAnimationTimer),

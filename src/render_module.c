@@ -20,7 +20,7 @@ void sirender_register(void) {
     sibackend_init();
 
     render->camera_query = ecs_query({
-        .terms = {
+        .components = {
             ecs_in(SICamera2D),
             ecs_in(SIWorldTransform2D),
             ecs_in(SICameraViewport),
@@ -28,7 +28,7 @@ void sirender_register(void) {
         },
     });
     render->renderable_query = ecs_query({
-        .terms = {
+        .components = {
             ecs_filter(SIRenderable),
             ecs_in(SIWorldTransform2D),
             ecs_in(SIColor),
@@ -55,7 +55,11 @@ void sirender_register(void) {
             .phase = EcsPreRender,
             .callback = sirender_begin_frame,
             .main_thread_only = true,
-            .read_resources = { ecs_id(SIEngineCtx) },
+            .query = {
+                .resources = {
+                    ecs_in(SIEngineCtx),
+                },
+            },
         }
     );
     ecs_system(
@@ -65,7 +69,11 @@ void sirender_register(void) {
             .callback = sirender_extract,
             .main_thread_only = true,
             .after = { begin_frame },
-            .write_resources = { ecs_id(SIRenderState) },
+            .query = {
+                .resources = {
+                    ecs_inout(SIRenderState),
+                },
+            },
         }
     );
     ecs_system(
@@ -74,7 +82,12 @@ void sirender_register(void) {
             .phase = EcsOnRender,
             .callback = sirender_draw_window,
             .main_thread_only = true,
-            .read_resources = { ecs_id(SIRenderState), ecs_id(SIEngineCtx) },
+            .query = {
+                .resources = {
+                    ecs_in(SIRenderState),
+                    ecs_in(SIEngineCtx),
+                },
+            },
         }
     );
     ecs_system(
@@ -83,7 +96,11 @@ void sirender_register(void) {
             .phase = EcsPostRender,
             .callback = sirender_end_frame,
             .main_thread_only = true,
-            .read_resources = { ecs_id(SIEngineCtx) },
+            .query = {
+                .resources = {
+                    ecs_in(SIEngineCtx),
+                },
+            },
         }
     );
 }

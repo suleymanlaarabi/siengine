@@ -87,11 +87,14 @@ void siassets_register(void) {
         .phase = EcsPreUpdate,
         .callback = upload_textures,
         .main_thread_only = true,
-        .read_resources = { ecs_id(SIAssetRoot), ecs_id(SIEngineCtx) },
         .query = {
-            .terms = {
+            .components = {
                 ecs_inout(SITexture),
                 ecs_not(SITextureRelease),
+            },
+            .resources = {
+                ecs_in(SIAssetRoot),
+                ecs_in(SIEngineCtx),
             },
         },
     });
@@ -100,11 +103,13 @@ void siassets_register(void) {
         .phase = assets->release_phase,
         .callback = release_textures,
         .main_thread_only = true,
-        .read_resources = { ecs_id(SIEngineCtx) },
         .query = {
-            .terms = {
+            .components = {
                 ecs_inout(SITexture),
                 ecs_filter(SITextureRelease),
+            },
+            .resources = {
+                ecs_in(SIEngineCtx),
             },
         },
     });
