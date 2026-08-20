@@ -7,6 +7,18 @@
 
 #ifdef __cplusplus
 #include <cstring>
+#include <format>
+namespace ecs {
+    inline std::string path(const std::string &value) {
+        #if defined(__EMSCRIPTEN__)
+        const char *start ="/";
+        #else
+        const char *start ="../../../../";
+        #endif
+        return std::format("{}{}", start, value);
+    }
+}
+
 extern "C" {
 #endif
 

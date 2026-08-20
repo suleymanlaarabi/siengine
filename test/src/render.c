@@ -3,6 +3,11 @@
 
 static void import_engine(void) { ECS_MODULE_IMPORT(siengine, {}); }
 
+static void extract_frame(void) {
+    ecs_run_phase(EcsPreRender);
+    ecs_run_phase(EcsPostRender);
+}
+
 static SITextureHandle make_test_texture(void) {
     SITextureHandle texture = siengine_load_texture("hero.png", SI_FILTER_NEAREST);
     ecs_run_phase(EcsPreUpdate);
@@ -27,9 +32,13 @@ void render_queries_are_world_owned_across_cycles(void) {
         ecs_init();
         import_engine();
 
-        SIRenderState *render = ecs_get_resource(SIRenderState);
-        test_true(render->camera_query != 0);
-        test_true(render->renderable_query != 0);
+        ecs_entity_t camera = ecs_new();
+        ecs_add(camera, SICamera2D);
+
+        extract_frame();
+
+        const SIRenderState *render = ecs_get_resource_read(SIRenderState);
+        test_int(1, render->views.size);
 
         ecs_fini();
     }
@@ -69,7 +78,7 @@ void render_extracts_once_for_multiple_views(void) {
     ecs_add(visible, SISprite);
     ecs_relate(visible, Material, material);
 
-    sirender_extract(NULL);
+    extract_frame();
 
     SIRenderState *render = ecs_get_resource(SIRenderState);
     test_int(2, render->views.size);
@@ -105,7 +114,7 @@ void render_extracts_postupdate_hierarchy_in_render_space(void) {
     ecs_relate(sprite, Material, material);
 
     ecs_run_phase(EcsPostUpdate);
-    sirender_extract(NULL);
+    extract_frame();
 
     SIRenderState *render = ecs_get_resource(SIRenderState);
     test_int(1, render->views.size);
@@ -163,7 +172,7 @@ void render_extracts_sheet_region_and_layer_order(void) {
     ecs_relate(foreground, Layer, SILayerForeground);
     ecs_relate(foreground, Material, material);
 
-    sirender_extract(NULL);
+    extract_frame();
     SIRenderState *render = ecs_get_resource(SIRenderState);
     test_int(2, render->batches.size);
     test_true(sicore_vec_get(&render->batches, 0, SIRenderBatch)->layer == SILayerBackground);
@@ -194,7 +203,7 @@ void render_extracts_colored_shapes(void) {
     ecs_relate(triangle, Material, SI2DDefaultMaterial);
     ecs_set(triangle, SIColor, { .r = 0.0f, .g = 0.0f, .b = 1.0f, .a = 1.0f });
 
-    sirender_extract(NULL);
+    extract_frame();
     SIRenderState *render = ecs_get_resource(SIRenderState);
     test_int(3, render->batches.size);
     test_int(3, render->instances.size);
@@ -228,7 +237,7 @@ void render_culls_shapes(void) {
     ecs_set(hidden, Position, { .x = 1000000.0f, .y = 0.0f });
 
     ecs_run_phase(EcsPostUpdate);
-    sirender_extract(NULL);
+    extract_frame();
     test_int(1, ecs_get_resource(SIRenderState)->instances.size);
     test_int(1, ecs_get_resource(SIRenderState)->batches.size);
 

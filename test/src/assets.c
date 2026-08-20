@@ -103,7 +103,8 @@ void assets_texture_load_from_worker_is_queued(void) {
     test_int(SI_TEXTURE_READY, ecs_get(worker_texture, SITexture)->state);
 
     siengine_release_texture(worker_texture);
-    ecs_run_phase(ecs_get_resource(SIAssetState)->release_phase);
+    ecs_kill(trigger);
+    ecs_run();
     test_false(ecs_is_alive(worker_texture));
     ecs_fini();
 }

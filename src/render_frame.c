@@ -185,116 +185,114 @@ static void extract_triangle_batch(
 void sirender_begin_frame(ecs_iter_t *it) {
     (void)it;
     sibackend_begin_frame();
-}
-
-void sirender_extract(ecs_iter_t *it) {
-    (void)it;
     SIRenderState *render = ecs_get_resource(SIRenderState);
     sicore_vec_clear(&render->views);
     sicore_vec_clear(&render->batches);
     sicore_vec_clear(&render->instances);
+}
 
-    ecs_iter_t cameras = ecs_query_iter(render->camera_query);
-    while (ecs_iter_next(&cameras)) {
-        const SICamera2D *cameras_data = ecs_field(&cameras, 0);
-        const SIWorldTransform2D *transforms = ecs_field(&cameras, 1);
-        const SICameraViewport *viewports = ecs_field(&cameras, 2);
-        const SIVirtualResolution *virtual_resolution = ecs_field(&cameras, 3);
+void sirender_extract_cameras(ecs_iter_t *it) {
+    SIRenderState *render = ecs_get_resource(SIRenderState);
+    const SICamera2D *cameras = ecs_field(it, 0);
+    const SIWorldTransform2D *transforms = ecs_field(it, 1);
+    const SICameraViewport *viewports = ecs_field(it, 2);
+    const SIVirtualResolution *virtual_resolution = ecs_field(it, 3);
 
-        for (uint32_t i = 0; i < cameras.count; i++) {
-            SIRenderView *view = sicore_vec_push_empty(&render->views, sizeof(*view));
-            float width = cameras_data[i].viewport_width / cameras_data[i].zoom;
-            float height = cameras_data[i].viewport_height / cameras_data[i].zoom;
-            *view = (SIRenderView){
-                .left = transforms[i].x - width * 0.5f,
-                .top = transforms[i].y - height * 0.5f,
-                .right = transforms[i].x + width * 0.5f,
-                .bottom = transforms[i].y + height * 0.5f,
-                .viewport_x = viewports[i].x,
-                .viewport_y = viewports[i].y,
-                .viewport_width = viewports[i].width,
-                .viewport_height = viewports[i].height,
-                .virtual_width = virtual_resolution ? virtual_resolution[i].width : 0,
-                .virtual_height = virtual_resolution ? virtual_resolution[i].height : 0,
-                .virtual_enabled = virtual_resolution != NULL,
-                .pixel_perfect = virtual_resolution ? virtual_resolution[i].pixel_perfect : false,
-            };
-        }
+    for (uint32_t i = 0; i < it->count; i++) {
+        SIRenderView *view = sicore_vec_push_empty(&render->views, sizeof(*view));
+        float width = cameras[i].viewport_width / cameras[i].zoom;
+        float height = cameras[i].viewport_height / cameras[i].zoom;
+
+        *view = (SIRenderView){
+            .left = transforms[i].x - width * 0.5f,
+            .top = transforms[i].y - height * 0.5f,
+            .right = transforms[i].x + width * 0.5f,
+            .bottom = transforms[i].y + height * 0.5f,
+            .viewport_x = viewports[i].x,
+            .viewport_y = viewports[i].y,
+            .viewport_width = viewports[i].width,
+            .viewport_height = viewports[i].height,
+            .virtual_width = virtual_resolution ? virtual_resolution[i].width : 0,
+            .virtual_height = virtual_resolution ? virtual_resolution[i].height : 0,
+            .virtual_enabled = virtual_resolution != NULL,
+            .pixel_perfect = virtual_resolution ? virtual_resolution[i].pixel_perfect : false,
+        };
     }
+}
 
-    ecs_iter_t renderables = ecs_query_iter(render->renderable_query);
-    while (ecs_iter_next(&renderables)) {
-        const SIWorldTransform2D *transforms = ecs_field(&renderables, 0);
-        const SIColor *colors = ecs_field(&renderables, 1);
-        const SISprite *sprites = ecs_field(&renderables, 2);
-        const SISpriteFlip *flips = ecs_field(&renderables, 3);
-        const SICircle *circles = ecs_field(&renderables, 4);
-        const SIRectangle *rectangles = ecs_field(&renderables, 5);
-        const SITriangle *triangles = ecs_field(&renderables, 6);
-        const SIMaterial2D *material = ecs_field(&renderables, 7);
-        const SISpriteSheet *sheet = ecs_field(&renderables, 8);
-        const SIPivot *pivot = ecs_field(&renderables, 9);
-        const SIBlendMode *blend = ecs_field(&renderables, 10);
-        const ecs_entity_t layer = ecs_target_shared(&renderables, Layer);
+void sirender_extract_renderables(ecs_iter_t *it) {
+    SIRenderState *render = ecs_get_resource(SIRenderState);
+    const SIWorldTransform2D *transforms = ecs_field(it, 0);
+    const SIColor *colors = ecs_field(it, 1);
+    const SISprite *sprites = ecs_field(it, 2);
+    const SISpriteFlip *flips = ecs_field(it, 3);
+    const SICircle *circles = ecs_field(it, 4);
+    const SIRectangle *rectangles = ecs_field(it, 5);
+    const SITriangle *triangles = ecs_field(it, 6);
+    const SIMaterial2D *material = ecs_field(it, 7);
+    const SISpriteSheet *sheet = ecs_field(it, 8);
+    const SIPivot *pivot = ecs_field(it, 9);
+    const SIBlendMode *blend = ecs_field(it, 10);
+    const ecs_entity_t layer = ecs_target_shared(it, Layer);
 
-        SIRenderBatch *batch = begin_batch(render);
-        batch->layer = layer;
+    SIRenderBatch *batch = begin_batch(render);
+    batch->layer = layer;
 
-        if (sprites) {
-            const SITexture *texture = ecs_get(material->texture, SITexture);
-            if (texture->state != SI_TEXTURE_READY)
-                continue;
-            extract_sprite_batch(
-                render,
-                batch,
-                transforms,
-                colors,
-                sprites,
-                flips,
-                material,
-                sheet,
-                pivot,
-                blend,
-                texture,
-                renderables.count
-            );
-        } else if (circles) {
-            extract_circle_batch(
-                render,
-                batch,
-                transforms,
-                colors,
-                circles,
-                material,
-                pivot,
-                blend,
-                renderables.count
-            );
-        } else if (rectangles) {
-            extract_rectangle_batch(
-                render,
-                batch,
-                transforms,
-                colors,
-                rectangles,
-                material,
-                pivot,
-                blend,
-                renderables.count
-            );
-        } else {
-            extract_triangle_batch(
-                render,
-                batch,
-                transforms,
-                colors,
-                triangles,
-                material,
-                pivot,
-                blend,
-                renderables.count
-            );
-        }
+    if (sprites) {
+        const SITexture *texture = ecs_get(material->texture, SITexture);
+        if (texture->state != SI_TEXTURE_READY)
+            return;
+
+        extract_sprite_batch(
+            render,
+            batch,
+            transforms,
+            colors,
+            sprites,
+            flips,
+            material,
+            sheet,
+            pivot,
+            blend,
+            texture,
+            it->count
+        );
+    } else if (circles) {
+        extract_circle_batch(
+            render,
+            batch,
+            transforms,
+            colors,
+            circles,
+            material,
+            pivot,
+            blend,
+            it->count
+        );
+    } else if (rectangles) {
+        extract_rectangle_batch(
+            render,
+            batch,
+            transforms,
+            colors,
+            rectangles,
+            material,
+            pivot,
+            blend,
+            it->count
+        );
+    } else {
+        extract_triangle_batch(
+            render,
+            batch,
+            transforms,
+            colors,
+            triangles,
+            material,
+            pivot,
+            blend,
+            it->count
+        );
     }
 }
 

@@ -6,7 +6,6 @@
 #include <string.h>
 
 ECS_RESOURCE_DEFINE(SIAssetRoot);
-ECS_RESOURCE_DEFINE(SIAssetState);
 
 static void append_asset_path(char destination[512], const char *path) {
     size_t length = strlen(destination);
@@ -74,11 +73,8 @@ void siassets_register(void) {
     ECS_COMPONENT_REGISTER(SITexture);
     ECS_COMPONENT_REGISTER(SITextureRelease);
     ECS_RESOURCE_REGISTER(SIAssetRoot);
-    ECS_RESOURCE_REGISTER(SIAssetState);
     ecs_set_resource(SIAssetRoot, { .path = "./assets" });
-    ecs_set_resource(SIAssetState, {});
-    SIAssetState *assets = ecs_get_resource(SIAssetState);
-    assets->release_phase = ecs_phase({
+    ecs_phase_t release_phase = ecs_phase({
         .name = "SiengineAssetRelease",
         .after = EcsPostRender,
     });
@@ -100,7 +96,7 @@ void siassets_register(void) {
     });
     ecs_system({
         .name = "SiengineReleaseTextures",
-        .phase = assets->release_phase,
+        .phase = release_phase,
         .callback = release_textures,
         .main_thread_only = true,
         .query = {

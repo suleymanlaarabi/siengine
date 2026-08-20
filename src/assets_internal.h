@@ -21,10 +21,6 @@ ECS_COMPONENT_DECLARE(SITexture, {
 
 ECS_TAG_DECLARE(SITextureRelease);
 
-ECS_RESOURCE_DECLARE(SIAssetState, {
-    ecs_phase_t release_phase;
-});
-
 void siassets_register(void);
 
 #endif

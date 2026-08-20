@@ -1,6 +1,7 @@
 #include "siecs.h"
 #include "siengine.h"
-#include <format>
+#include <cstring>
+#include <string>
 
 int main(int argc, char *argv[]) {
     ecs::init({ .target_fps = 120, .worker_threads = 4 });
@@ -8,11 +9,7 @@ int main(int argc, char *argv[]) {
     ecs::import<siengine>();
 
     ecs::set_resource(SIWindow("Hello", "siengine-canvas"));
-#if defined(__EMSCRIPTEN__)
-    ecs::set_resource(SIAssetRoot("/assets"));
-#else
-    ecs::set_resource(SIAssetRoot("../../../../assets"));
-#endif
+    ecs::set_resource(SIAssetRoot(strdup(ecs::path("assets").c_str())));
 
     ecs::entity::create().add<SICamera2D>();
 

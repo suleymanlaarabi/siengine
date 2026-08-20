@@ -106,15 +106,11 @@ ECS_RESOURCE_DECLARE(SIRenderState, {
     sicore_vec_t views;
     sicore_vec_t batches;
     sicore_vec_t instances;
-    ecs_query_id_t camera_query;
-    ecs_query_id_t renderable_query;
 });
 
-/* These callbacks are installed as main-thread-only ECS systems. The
- * persistent queries are owned by SIRenderState and are never traversed by a
- * worker. */
 void sirender_begin_frame(ecs_iter_t *it);
-void sirender_extract(ecs_iter_t *it);
+void sirender_extract_cameras(ecs_iter_t *it);
+void sirender_extract_renderables(ecs_iter_t *it);
 void sirender_end_frame(ecs_iter_t *it);
 void sirender_draw_window(ecs_iter_t *it);
 void sirender_register(void);
